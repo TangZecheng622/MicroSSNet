@@ -1,0 +1,24 @@
+Package: MicroSSNet
+Title: A Package for Microbial Network Analysis
+Version: 0.1.0
+Authors@R: 
+    person("Tang", "Zecheng", , "tangzechengna@gmail.com", role = c("aut", "cre"),
+           comment = c(ORCID = "0009-0006-2004-9989"))
+Description: This package provides tools for microbial network analysis.
+License: MIT
+Encoding: UTF-8
+LazyData: true
+Imports:
+    igraph,
+    devtools,
+    ggplot2,
+    tidyr,
+    stringr,
+    parallel,
+    Hmisc,
+    dplyr,
+    ggsci,
+    ggpubr,
+    plyr
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
