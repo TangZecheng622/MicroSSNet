@@ -2,16 +2,18 @@
 % Please edit documentation in R/Modularity.R
 \name{modularity_igraph}
 \alias{modularity_igraph}
-\title{网络模块化
-@param g 输入需要模块化的网络
-@param clu_method 网络聚类方法
-@export}
+\title{Network Modularity Calculation}
 \usage{
 modularity_igraph(g, clu_method = "cluster_fast_greedy")
 }
+\arguments{
+\item{g}{An \code{igraph} object representing the network.}
+
+\item{clu_method}{Character string specifying the network clustering method. Supported methods are "cluster_walktrap", "cluster_edge_betweenness", "cluster_fast_greedy", "cluster_spinglass".}
+}
+\value{
+A list containing the membership vector and the modularity value.
+}
 \description{
-网络模块化
-@param g 输入需要模块化的网络
-@param clu_method 网络聚类方法
-@export
+This function calculates the modularity of a network and returns the membership of nodes and the modularity value.
 }

@@ -1,105 +1,203 @@
-#'  鲁棒值脆弱值的可视化
+#' Compare Robustness and Vulnerability Across Groups
 #'
-#'  @param rrob_sum_list 生成每组的鲁棒值的平均值
-#'  @param rrob_detail_list 生成每组的鲁棒值的详细值
-#'  @export
-compare_rob_vul <- function(rrob_sum_list,rrob_detail_list){
-  if(length(rrob_sum_list)|length(rrob_detail_list)==0){
+#' This function generates plots comparing network robustness, vulnerability, and complexity across multiple groups.
+#'
+#' @param rrob_sum_list A list of data frames containing robustness summary for each group.
+#' @param rrob_detail_list A list of data frames containing robustness details for each group.
+#' @param group_list A character vector of group names.
+#' @param sel_group A character string for output file labeling.
+#' @param output_dir Character string specifying the output directory.
+#' @importFrom ggplot2 ggsave
+#' @importFrom grDevices dev.off
+#' @importFrom utils combn
+#' @export
+compare_rob_vul <- function(rrob_sum_list, rrob_detail_list, group_list, sel_group = "Group", output_dir = "./") {
+  if (length(rrob_sum_list) == 0 || length(rrob_detail_list) == 0) {
+    message("Warning: Input lists are empty.")
     return(invisible(NULL))
   }
-  rrob_sum <- data.frame()
-  for (i in rrob_sum_list){
 
-    rrob_sum <- rbind(rrob_sum,as.data.frame(i))
+  # Combine data
+  rrob_sum <- do.call(rbind, rrob_sum_list)
+  rrob_detail <- do.call(rbind, rrob_detail_list)
 
+  # Prepare output directory
+  if (!dir.exists(output_dir)) {
+    dir.create(output_dir, recursive = TRUE)
   }
-  rrob_detail <- data.frame()
-  for (i in rrob_detail_list){
 
-    rrob_detail <- rbind(rrob_detail,as.data.frame(i))
+  compare_groups <- if (length(group_list) > 1 & length(group_list) <= 3 & length(rrob_sum_list) > 1 & length(rrob_sum_list) <= 3) {
+    lapply(utils::combn(group_list, 2, simplify = FALSE), function(x) as.character(x))
+  } else {
+    print("If there is only one group, or if there are more than three groups, no significant comparison will be made.")
+    NULL  # 只有一个组时，设为 NULL
   }
-  rrob_detail <- subset(rrob_detail,Proportion.removed != 1)
+
+  rrob_detail$group <- factor(rrob_detail$group, levels = group_list)
+
+  # Plot robustness summary
+  p_rrob_sum <- plot_robustness_summary(rrob_sum)
+  ggplot2::ggsave(filename = file.path(output_dir, paste0(sel_group, "_random_removal_Mean_SD.pdf")),
+                  plot = p_rrob_sum, height = 6, width = 12)
+
+  # Plot robustness detail
+  prrob_detail <- plot_robustness_detail(rrob_detail, compare_groups)
+  ggplot2::ggsave(filename = file.path(output_dir, paste0(sel_group, "_random_removal_Robustness.pdf")),
+                  plot = prrob_detail, height = 6, width = 12)
+
+  # Plot vulnerability detail
+  pvul_detail <- plot_vulnerability_detail(rrob_detail, compare_groups)
+  ggplot2::ggsave(filename = file.path(output_dir, paste0(sel_group, "_random_removal_Vulnerability.pdf")),
+                  plot = pvul_detail, height = 6, width = 12)
+
+  # Plot complexity detail
+  cpx_detail <- plot_complexity_detail(rrob_detail, compare_groups)
+  ggplot2::ggsave(filename = file.path(output_dir, paste0(sel_group, "_random_removal_Complexity.pdf")),
+                  plot = cpx_detail, height = 6, width = 12)
+}
 
 
-  ###网络鲁棒性模拟
+#' Plot Robustness Summary
+#'
+#' @param rrob_sum Data frame containing robustness summary data.
+#' @return A ggplot object.
+#' @importFrom tidyr pivot_longer
+#' @importFrom ggplot2 ggplot aes geom_point geom_line facet_wrap labs theme_minimal
+#' @importFrom ggsci scale_color_aaas
+#' @export
+plot_robustness_summary <- function(rrob_sum) {
+  # Reshape data for plotting
+  df_long <- tidyr::pivot_longer(rrob_sum,
+                                 cols = c("Robustness.mean", "Vulnerability.mean", "Complexity.mean"),
+                                 names_to = "Metric",
+                                 values_to = "Mean")
 
-  p_rrob_sum = ggplot(rrob_sum, aes(x = Proportion.removed, y = remain.mean, group = interaction(weighted, group), color = group)) +
-    geom_line() +
-    geom_pointrange(aes(ymin = remain.mean - remain.sd, ymax = remain.mean + remain.sd), size = 0.2) +
-    facet_wrap(~ weighted, ncol = 2) +
-    xlab("Proportion of species removed") +
-    ylab("Proportion of species remained") +
-    theme_bw() +
-    #    scale_color_manual(values = colr)+  # 这里可以根据组的数量调整颜色+
-    ggtitle("The impact of random removal of SGB on network stability")
-  p_rrob_sum =p_rrob_sum +scale_color_aaas()
-  ggsave(paste0(sel_group,"random_removal_Mean_SD.0.05-1.pdf"),plot = p_rrob_sum,height = 6,width = 12)
+  ggplot2::ggplot(df_long, ggplot2::aes(x = Proportion.removed, y = Mean, color = group)) +
+    ggplot2::geom_point(size = 3) +
+    ggplot2::geom_line() +
+    ggplot2::facet_wrap(~ Metric, scales = "free_y") +
+    ggplot2::labs(x = "Proportion Removed", y = "Mean Value", title = "Robustness, Vulnerability, and Complexity Summary") +
+    ggplot2::theme_minimal() +
+    ggsci::scale_color_aaas()
+}
+#' Plot Robustness Detail
+#'
+#' This function generates a detailed plot of network robustness under random node removal.
+#'
+#' @param rrob_detail Data frame containing the detailed robustness data.
+#' @param compare_groups List of group comparisons for statistical testing (optional).
+#' @return A `ggplot` object representing the robustness plot.
+#' @importFrom ggplot2 ggplot aes geom_boxplot theme_bw ylab labs position_dodge
+#' @importFrom ggpubr stat_compare_means
+#' @importFrom ggdist stat_halfeye
+#' @importFrom ggsci scale_color_lancet scale_fill_lancet
+#' @export
+plot_robustness_detail <- function(rrob_detail, compare_groups = NULL) {
+  if (!is.data.frame(rrob_detail)) stop("Error: 'rrob_detail' must be a data frame.")
+  if (!is.null(compare_groups) && !is.list(compare_groups)) stop("Error: 'compare_groups' must be a list or NULL.")
 
-  #  compare_groups=list(c('KM','DQ'),c('DQ','NM'),c('KM','NM'))
-  compare_groups <- lapply(combn(group_list, 2, simplify = FALSE), function(x) as.character(x))
-  rrob_detail$group=factor(rrob_detail$group,c(group_list))
-  unique(rrob_detail$Proportion.removed)
+  rrob_detail$Proportion.removed <- as.factor(rrob_detail$Proportion.removed)
 
+  p <- ggplot2::ggplot(rrob_detail, ggplot2::aes(x = Proportion.removed, y = Robustness, color = group, fill = group)) +
+    ggplot2::geom_boxplot(width = 0.25, fill = "white", size = 0.1, outlier.shape = NA, position = ggplot2::position_dodge(width = 0.6)) +
+    ggdist::stat_halfeye(adjust = 0.33, width = 0.67, color = NA, position = ggplot2::position_dodge(width = 0.6)) +
+    ggplot2::theme_bw() +
+    ggplot2::ylab("Robustness") +
+    ggplot2::labs(title = "Robustness of Network under Random Node Removal") +
+    ggsci::scale_color_lancet() +
+    ggsci::scale_fill_lancet()
 
-  prrob_detail=ggplot(rrob_detail,aes(x=group,y=Proportion.remain,col=group,fill=group))+
-    facet_wrap(~ Proportion.removed,nrow = 1)+
-    geom_boxplot(
-      width = .2, fill = "white",
-      size = 1, outlier.shape = NA
-    ) +
-    ggdist::stat_halfeye(
-      adjust = .33, ## bandwidth
-      width = .67,
-      color = NA, ## remove slab interval
-      position = position_nudge(x = .2)
-    ) +
-    # gghalves::geom_half_point(
-    #   side = "l",
-    #   range_scale = .3,
-    #   alpha = .5, size = 2
-    # )+
-    stat_compare_means(color="gray",comparisons=compare_groups,
-                       label = "p.signif")+
-    # scale_color_manual(values = colr)+
-    # scale_fill_manual(values = colr)+
-    #facet_wrap(~Index,scales = 'free',nrow = 1)+
-    theme_bw()+
-    ylab("Robustness") +
-    labs(title = "Robustness_Random 5%~95% of SGBs's network ")
+  # Add statistical comparisons if compare_groups is provided
+  if (!is.null(compare_groups)) {
+    p <- p + ggpubr::stat_compare_means(
+      # comparisons = compare_groups,
+      ggplot2::aes(group = group),
+      label = "p.signif",
+      method = "wilcox.test",
+      hide.ns = FALSE
+    )
+  }
 
-  prrob_detail <- prrob_detail+scale_color_lancet()
-  prrob_detail <- prrob_detail+scale_fill_lancet()
-  ggsave(paste0(sel_group,"random_removal_SGB_robustness.6x6.pdf"),plot = prrob_detail,height = 6,width = 12)
+  return(p)
+}
+#' Plot Vulnerability Detail
+#'
+#' This function generates a detailed plot of network vulnerability under random node removal.
+#'
+#' @param rrob_detail Data frame containing the detailed vulnerability data.
+#' @param compare_groups List of group comparisons for statistical testing (optional).
+#' @return A `ggplot` object representing the vulnerability plot.
+#' @importFrom ggplot2 ggplot aes geom_boxplot theme_bw ylab labs position_dodge
+#' @importFrom ggpubr stat_compare_means
+#' @importFrom ggdist stat_halfeye
+#' @importFrom ggsci scale_color_lancet scale_fill_lancet
+#' @export
+plot_vulnerability_detail <- function(rrob_detail, compare_groups = NULL) {
+  if (!is.data.frame(rrob_detail)) stop("Error: 'rrob_detail' must be a data frame.")
+  if (!is.null(compare_groups) && !is.list(compare_groups)) stop("Error: 'compare_groups' must be a list or NULL.")
 
-  pvul_detail=ggplot(rrob_detail,aes(x=group,y=Vulnerability,col=group,fill=group))+
-    facet_wrap(~ Proportion.removed,nrow = 1)+
-    geom_boxplot(
-      width = .2, fill = "white",
-      size = 1, outlier.shape = NA
-    ) +
-    ggdist::stat_halfeye(
-      adjust = .33, ## bandwidth
-      width = .67,
-      color = NA, ## remove slab interval
-      position = position_nudge(x = .2)
-    ) +
-    # gghalves::geom_half_point(
-    #   side = "l",
-    #   range_scale = .3,
-    #   alpha = .5, size = 2
-    # )+
-    stat_compare_means(color="gray",comparisons=compare_groups,
-                       label = "p.signif")+
-    # scale_color_manual(values = colr)+
-    # scale_fill_manual(values = colr)+
-    #facet_wrap(~Index,scales = 'free',nrow = 1)+
-    theme_bw()+
-    ylab("Vulnerability") +
-    labs(title = "Vulnerability_Random 5%~95% of SGBs's network ")
+  rrob_detail$Proportion.removed <- as.factor(rrob_detail$Proportion.removed)
 
-  pvul_detail <- pvul_detail+scale_color_lancet()
-  pvul_detail <- pvul_detail+scale_fill_lancet()
-  ggsave(paste0(sel_group,"random_removal_SGB_Vulnerability.6x6.pdf"),plot = pvul_detail,height = 6,width = 12)
+  p <- ggplot2::ggplot(rrob_detail, ggplot2::aes(x = Proportion.removed, y = Vulnerability, color = group, fill = group)) +
+    ggplot2::geom_boxplot(width = 0.25, fill = "white", size = 0.1, outlier.shape = NA, position = ggplot2::position_dodge(width = 0.6)) +
+    ggdist::stat_halfeye(adjust = 0.33, width = 0.67, color = NA, position = ggplot2::position_dodge(width = 0.6)) +
+    ggplot2::theme_bw() +
+    ggplot2::ylab("Vulnerability") +
+    ggplot2::labs(title = "Vulnerability of Network under Random Node Removal") +
+    ggsci::scale_color_lancet() +
+    ggsci::scale_fill_lancet()
 
+  # Add statistical comparisons if compare_groups is provided
+  if (!is.null(compare_groups)) {
+    p <- p + ggpubr::stat_compare_means(
+      # comparisons = compare_groups,
+      ggplot2::aes(group = group),
+      label = "p.signif",
+      method = "wilcox.test",
+      hide.ns = FALSE
+    )
+  }
 
+  return(p)
+}
+#' Plot Complexity Detail
+#'
+#' This function generates a detailed plot of network complexity under random node removal.
+#'
+#' @param rrob_detail Data frame containing the detailed complexity data.
+#' @param compare_groups List of group comparisons for statistical testing (optional).
+#' @return A `ggplot` object representing the complexity plot.
+#' @importFrom ggplot2 ggplot aes geom_boxplot theme_bw ylab labs position_dodge
+#' @importFrom ggpubr stat_compare_means
+#' @importFrom ggdist stat_halfeye
+#' @importFrom ggsci scale_color_lancet scale_fill_lancet
+#' @export
+plot_complexity_detail <- function(rrob_detail, compare_groups = NULL) {
+  if (!is.data.frame(rrob_detail)) stop("Error: 'rrob_detail' must be a data frame.")
+  if (!is.null(compare_groups) && !is.list(compare_groups)) stop("Error: 'compare_groups' must be a list or NULL.")
+
+  rrob_detail$Proportion.removed <- as.factor(rrob_detail$Proportion.removed)
+
+  p <- ggplot2::ggplot(rrob_detail, ggplot2::aes(x = Proportion.removed, y = Complexity, color = group, fill = group)) +
+    ggplot2::geom_boxplot(width = 0.25, fill = "white", size = 0.1, outlier.shape = NA, position = ggplot2::position_dodge(width = 0.6)) +
+    ggdist::stat_halfeye(adjust = 0.33, width = 0.67, color = NA, position = ggplot2::position_dodge(width = 0.6)) +
+    ggplot2::theme_bw() +
+    ggplot2::ylab("Complexity") +
+    ggplot2::labs(title = "Complexity of Network under Random Node Removal") +
+    ggsci::scale_color_lancet() +
+    ggsci::scale_fill_lancet()
+
+  # Add statistical comparisons if compare_groups is provided
+  if (!is.null(compare_groups)) {
+    p <- p + ggpubr::stat_compare_means(
+      # comparisons = compare_groups,
+      ggplot2::aes(group = group),
+      label = "p.signif",
+      method = "wilcox.test",
+      hide.ns = FALSE
+
+    )
+  }
+
+  return(p)
 }

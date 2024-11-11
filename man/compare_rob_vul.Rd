@@ -2,12 +2,27 @@
 % Please edit documentation in R/PlotRobVul.R
 \name{compare_rob_vul}
 \alias{compare_rob_vul}
-\title{鲁棒值脆弱值的可视化}
+\title{Compare Robustness and Vulnerability Across Groups}
 \usage{
-compare_rob_vul(rrob_sum_list, rrob_detail_list)
+compare_rob_vul(
+  rrob_sum_list,
+  rrob_detail_list,
+  group_list,
+  sel_group = "Group",
+  output_dir = "./"
+)
+}
+\arguments{
+\item{rrob_sum_list}{A list of data frames containing robustness summary for each group.}
+
+\item{rrob_detail_list}{A list of data frames containing robustness details for each group.}
+
+\item{group_list}{A character vector of group names.}
+
+\item{sel_group}{A character string for output file labeling.}
+
+\item{output_dir}{Character string specifying the output directory.}
 }
 \description{
-@param rrob_sum_list 生成每组的鲁棒值的平均值
-@param rrob_detail_list 生成每组的鲁棒值的详细值
-@export
+This function generates plots comparing network robustness, vulnerability, and complexity across multiple groups.
 }

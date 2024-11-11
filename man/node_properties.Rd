@@ -2,31 +2,33 @@
 % Please edit documentation in R/Properties.R
 \name{node_properties}
 \alias{node_properties}
-\title{网络属性计算
-@param igraph 输入需要属性分析的网络
-@param clu_method 网络聚类方法
-@param zipi 是否计算zipi值
-@param RM 是否计算相对模块化
-@param tag 网络名字
-@param output 输出路径
-@export}
+\title{Calculate Network Properties}
 \usage{
 node_properties(
-  igraph,
+  graph,
   clu_method = "cluster_walktrap",
   zipi = FALSE,
   RM = TRUE,
-  tag = NULL,
+  tag = "NA",
   output = "./zipi/"
 )
 }
+\arguments{
+\item{graph}{An \code{igraph} object representing the network.}
+
+\item{clu_method}{Character, network clustering method. Default is "cluster_walktrap".}
+
+\item{zipi}{Logical, whether to calculate ZiPi values. Default is FALSE.}
+
+\item{RM}{Logical, whether to calculate relative modularity. Default is TRUE.}
+
+\item{tag}{Character, network name. Default is "NA".}
+
+\item{output}{Character, output file path. Default is "./zipi/".}
+}
+\value{
+A list containing local and global indicators.
+}
 \description{
-网络属性计算
-@param igraph 输入需要属性分析的网络
-@param clu_method 网络聚类方法
-@param zipi 是否计算zipi值
-@param RM 是否计算相对模块化
-@param tag 网络名字
-@param output 输出路径
-@export
+This function calculates local and global properties of a given network.
 }

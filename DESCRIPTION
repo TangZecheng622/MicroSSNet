@@ -1,24 +1,35 @@
 Package: MicroSSNet
-Title: A Package for Microbial Network Analysis
-Version: 0.1.0
+Title: What the Package Does (One Line, Title Case)
+Version: 0.0.0.9000
 Authors@R: 
-    person("Tang", "Zecheng", , "tangzechengna@gmail.com", role = c("aut", "cre"),
-           comment = c(ORCID = "0009-0006-2004-9989"))
-Description: This package provides tools for microbial network analysis.
-License: MIT
+    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"),
+           comment = c(ORCID = "YOUR-ORCID-ID"))
+Description: What the package does (one paragraph).
+License: MIT + file LICENSE
 Encoding: UTF-8
-LazyData: true
-Imports:
-    igraph,
-    devtools,
-    ggplot2,
-    tidyr,
-    stringr,
-    parallel,
-    Hmisc,
-    dplyr,
-    ggsci,
-    ggpubr,
-    plyr
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
+Imports: 
+    data.table,
+    dplyr,
+    ggdist,
+    ggplot2,
+    ggpubr,
+    ggsci,
+    Hmisc,
+    igraph,
+    limma,
+    mgm,
+    networktools,
+    qgraph,
+    scales,
+    SpiecEasi,
+    tidyr,
+    vegan,
+    magrittr,
+    methods,
+    purrr,
+    rlang,
+    tibble
+Suggests: 
+    lionessR

@@ -1,111 +1,114 @@
-#'  网络可视化
-#'  @param g 输入需要可视化的网络
-#'  @param clu_method 网络聚类方法.
-#'  @param tag 网络名
-#'  @param df 微生物丰度文件，提供则按照平均丰度作为网络点的大小
-#'  @param node.cluster 每个模块点数量阈值，大于这个阈值才上色
-#'  @export
+#' Network Visualization
+#'
+#' This function visualizes the network with nodes colored by modules and sized by average abundance.
+#'
+#' @param g An `igraph` object representing the network.
+#' @param clu_method Character string specifying the network clustering method.
+#' @param tag Character string specifying the network name.
+#' @param df Optional data frame containing species abundance data to size nodes.
+#' @param node_cluster Integer, the minimum number of nodes in a module to assign a unique color.
+#' @param output_dir Character string specifying the output directory.
+#' @importFrom ggsci pal_d3
+#' @importFrom scales rescale
+#' @importFrom igraph as_edgelist delete_vertices degree V E layout_with_fr
+#' @importFrom grDevices pdf dev.off
+#' @importFrom graphics par plot title
+#' @export
+plotnetwork <- function(g, clu_method = "cluster_fast_greedy", tag = "network", df = NULL, node_cluster = 10, output_dir = "./") {
+  if (!inherits(g, "igraph")) stop("Error: 'g' must be an 'igraph' object.")
+  if (!is.character(clu_method)) stop("Error: 'clu_method' must be a character string.")
+  if (!is.character(tag)) stop("Error: 'tag' must be a character string.")
+  if (!is.null(df) && !is.data.frame(df)) stop("Error: 'df' must be a data frame if provided.")
+  if (!dir.exists(output_dir)) {
+    dir.create(output_dir, recursive = TRUE)
+  }
 
-plotnetwork <- function(g,clu_method="cluster_fast_greedy",tag=tag,df = NULL,node.cluster = 10){
-
-
-  # cols <- c("#DEB99B" ,"#5ECC6D", "#5DAFD9", "#7ED1E4", "#EA9527", "#F16E1D" ,"#6E4821", "#A4B423","#F7B6D2FF","#aec7e8ff",
-  #           "#C094DF" ,"#DC95D8" ,"#326530", "#50C0C9", "#67C021" ,"#DC69AF", "#8C384F", "#30455C", "#F96C72","#5ED2BF")
-  base_colors <- pal_d3("category20")(20)
-  color_to_remove <- c("#7F7F7FFF","#C7C7C7FF")
+  # Color settings
+  base_colors <- ggsci::pal_d3("category20")(20)
+  color_to_remove <- c("#7F7F7FFF", "#C7C7C7FF")
   base_colors <- base_colors[!(base_colors %in% color_to_remove)]
   col_g <- "#C7C7C7FF"
-  V(g)$membership <- modularity_igraph(g,clu_method)[[1]]
-  # modu_sort <- V(g)$membership %>% table() %>% sort(decreasing = T)
-  modu_sort <- V(g)$membership %>% table()
-  # top_num <- 18
-  modu_sort <- modu_sort[modu_sort>=node.cluster]
 
-  new_colors <- colorRamp(base_colors)(seq(0, 1, length.out = length(modu_sort)))
-  cols <- rgb(new_colors, maxColorValue = 255)
-
+  igraph::V(g)$membership <- modularity_igraph(g, clu_method)$membership
+  modu_sort <- table(igraph::V(g)$membership)
+  modu_sort <- modu_sort[modu_sort >= node_cluster]
+  num_colors <- length(modu_sort)
+  cols <- base_colors[seq_len(num_colors)]
 
   modu_name <- names(modu_sort)
-
-  modu_cols <- cols[1:length(modu_name)]
+  modu_cols <- cols
   names(modu_cols) <- modu_name
-  V(g)$label <- NA
-  ###color
-  V(g)$color <- V(g)$membership
 
-  V(g)$color[!(V(g)$color %in% modu_name)] <- col_g
-  V(g)$color[(V(g)$color %in% modu_name)] <- modu_cols[match(V(g)$color[(V(g)$color %in% modu_name)],modu_name)]
-  V(g)$frame.color <- V(g)$color
-  ###size
-  if(!is.null(df)){
-    V(g)$size = rowMeans(df[V(g),])
-    V(g)$size = log1p(V(g)$size)
-    min_size <- min(V(g)$size)
-    max_size <- max(V(g)$size)
-    V(g)$size <- (V(g)$size - min_size) / (max_size - min_size)*3
-  }else{
-    V(g)$size = 1
+  igraph::V(g)$label <- NA
+  # Assign colors to nodes
+  igraph::V(g)$color <- ifelse(igraph::V(g)$membership %in% modu_name,
+                       modu_cols[as.character(igraph::V(g)$membership)],
+                       col_g)
+  igraph::V(g)$frame.color <- igraph::V(g)$color
+
+  # Assign sizes to nodes
+  if (!is.null(df)) {
+    node_sizes <- rowMeans(df[igraph::V(g)$name, , drop = FALSE], na.rm = TRUE)
+    igraph::V(g)$size <- scales::rescale(log1p(node_sizes), to = c(0.5, 2))  # 标准化至 1-5 之间
+  } else {
+    igraph::V(g)$size <- 5
   }
 
-
-  E(g)$color <- col_g
-  for ( i in modu_name){
-    col_edge <- cols[which(modu_name==i)]
-    otu_same_modu <-V(g)$name[which(V(g)$membership==i)]
-    E(g)$color[(data.frame(as_edgelist(g))$X1 %in% otu_same_modu)&(data.frame(as_edgelist(g))$X2 %in% otu_same_modu)] <- col_edge
+  # Assign colors to edges
+  igraph::E(g)$color <- col_g
+  edge_list <- as.data.frame(igraph::as_edgelist(g))
+  for (i in modu_name) {
+    col_edge <- modu_cols[i]
+    otu_same_modu <- igraph::V(g)$name[igraph::V(g)$membership == i]
+    idx <- which(edge_list$V1 %in% otu_same_modu & edge_list$V2 %in% otu_same_modu)
+    igraph::E(g)$color[idx] <- col_edge
   }
-  g1 <- delete_vertices(g, which(degree(g)==0) ) #去除度为0
-  sub_net_layout1 <- layout_with_fr(g1, niter=999,grid = 'nogrid')
-  ## 可视化并输出
-  pdf(file = paste(tag,"_network_plot.pdf"), width = 8,height = 8)
-  par(font.main=4)
-  plot(g1,layout=sub_net_layout1, edge.color = E(g)$color)
-  title(main = paste0('Nodes=',length(V(g1)$name),', ','Edges=',nrow(data.frame(as_edgelist(g1)))),cex.main=2)
-  dev.off()
 
-  curves <- autocurve.edges2(g)
-  file_name <- paste(tag,"_network_plot2.pdf")
-  sub_net_layout <- layout_with_fr(g, niter=999,grid = 'nogrid')
+  # Remove isolated nodes
+  g1 <- igraph::delete_vertices(g, which(igraph::degree(g) == 0))
+  curves <- autocurve.edges2(g1)
+  sub_net_layout1 <- igraph::layout_with_fr(g1, niter = 999, grid = 'nogrid')
 
-  ## 可视化并输出
-  pdf(file = file_name, width = 8,height = 8)
-  par(font.main=4)
-  plot(g,layout=sub_net_layout, edge.color = E(g)$color,#vertex.size=2,
-       vertex.frame.width=0.1,
-       #vertex.label=nodes_CQ1$Name,
-       vertex.label.cex=0.1,
-       edge.curved=curves,
-       #vertex.size=V(phage_network)$size,
-       #vertex.size2	=V(phage_network)$size,
-       vertex.frame.color="grey")
-
-  title(main = paste0('Nodes=',length(V(g)$name),', ','Edges=',nrow(data.frame(as_edgelist(g)))),cex.main=2)
-
-  dev.off()
+  # Visualization and output
+  output_file_pdf <- file.path(output_dir, paste0(tag, "_network_plot.pdf"))
+  grDevices::pdf(file = output_file_pdf, width = 8, height = 8)
+  par(font.main = 4)
+  plot(g1,
+       layout = sub_net_layout1,
+       edge.curved = curves,
+       edge.color = igraph::E(g1)$color,
+       vertex.size = igraph::V(g1)$size,
+       vertex.label = igraph::V(g1)$label,
+       vertex.color = igraph::V(g1)$color,
+       vertex.frame.color = igraph::V(g1)$frame.color)
+  title(main = paste0('Nodes = ', length(igraph::V(g1)$name), ', Edges = ', length(igraph::E(g1))), cex.main = 2)
+  grDevices::dev.off()
 }
-autocurve.edges2 <-function (graph, start = 0.5)
-{
-  cm <- count.multiple(graph)
-  mut <-is.mutual(graph)  #are connections mutual?
-  el <- apply(get.edgelist(graph, names = FALSE), 1, paste,
-              collapse = ":")
+
+
+#' Adjust Edge Curvature for Visualization
+#'
+#' This function calculates the curvature of edges in a graph for better visualization.
+#'
+#' @param graph An `igraph` object.
+#' @param start Numeric value indicating the starting curvature.
+#' @return A numeric vector of curvature values for edges.
+#' @importFrom igraph count_multiple is.mutual get.edgelist
+#' @export
+autocurve.edges2 <- function(graph, start = 0.5) {
+  cm <- igraph::count_multiple(graph)
+  mut <- igraph::is.mutual(graph)
+  el <- apply(igraph::get.edgelist(graph, names = FALSE), 1, paste, collapse = ":")
   ord <- order(el)
   res <- numeric(length(ord))
   p <- 1
   while (p <= length(res)) {
     m <- cm[ord[p]]
-    mut.obs <-mut[ord[p]] #are the connections mutual for this point?
+    mut_obs <- mut[ord[p]]
     idx <- p:(p + m - 1)
-    if (m == 1 & mut.obs==FALSE) { #no mutual conn = no curve
-      r <- 0
-    }
-    else {
-      r <- seq(-start, start, length = m)
-    }
+    r <- if (m == 1 & !mut_obs) 0 else seq(-start, start, length.out = m)
     res[ord[idx]] <- r
     p <- p + m
   }
   res
 }
-
-

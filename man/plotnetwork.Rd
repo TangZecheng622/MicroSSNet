@@ -2,28 +2,30 @@
 % Please edit documentation in R/PlotNet.R
 \name{plotnetwork}
 \alias{plotnetwork}
-\title{网络可视化
-@param g 输入需要可视化的网络
-@param clu_method 网络聚类方法.
-@param tag 网络名
-@param df 微生物丰度文件，提供则按照平均丰度作为网络点的大小
-@param node.cluster 每个模块点数量阈值，大于这个阈值才上色
-@export}
+\title{Network Visualization}
 \usage{
 plotnetwork(
   g,
   clu_method = "cluster_fast_greedy",
-  tag = tag,
+  tag = "network",
   df = NULL,
-  node.cluster = 10
+  node_cluster = 10,
+  output_dir = "./"
 )
 }
+\arguments{
+\item{g}{An \code{igraph} object representing the network.}
+
+\item{clu_method}{Character string specifying the network clustering method.}
+
+\item{tag}{Character string specifying the network name.}
+
+\item{df}{Optional data frame containing species abundance data to size nodes.}
+
+\item{node_cluster}{Integer, the minimum number of nodes in a module to assign a unique color.}
+
+\item{output_dir}{Character string specifying the output directory.}
+}
 \description{
-网络可视化
-@param g 输入需要可视化的网络
-@param clu_method 网络聚类方法.
-@param tag 网络名
-@param df 微生物丰度文件，提供则按照平均丰度作为网络点的大小
-@param node.cluster 每个模块点数量阈值，大于这个阈值才上色
-@export
+This function visualizes the network with nodes colored by modules and sized by average abundance.
 }
