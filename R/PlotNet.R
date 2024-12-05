@@ -70,7 +70,7 @@ plotnetwork <- function(g, clu_method = "cluster_fast_greedy", tag = "network", 
   sub_net_layout1 <- igraph::layout_with_fr(g1, niter = 999, grid = 'nogrid')
 
   # Visualization and output
-  output_file_pdf <- file.path(output_dir, paste0(tag, "_network_plot.pdf"))
+  output_file_pdf <- file.path(output_dir, paste0(tag, "_Network_Plot.pdf"))
   grDevices::pdf(file = output_file_pdf, width = 8, height = 8)
   par(font.main = 4)
   plot(g1,

@@ -40,7 +40,9 @@ corMicro <- function(table1,
   cor <- NULL
 
   if (method %in% c("pearson", "spearman")) {
-    occor <- Hmisc::rcorr(log1p(t(table1)), type = method)
+    # occor <- Hmisc::rcorr(log1p(t(table1)), type = method)
+    # occor <- Hmisc::rcorr(log(t(table1)+10e-16), type = method)
+    occor <- Hmisc::rcorr(t(table1),type = method)
     occor.r <- occor$r
     occor.P <- occor$P
     diag(occor.r) <- 0
@@ -60,9 +62,12 @@ corMicro <- function(table1,
     cor <- occor.r
 
     if (vose == TRUE) {
-      write.csv(occor.r, file = file.path(output_dir, paste0(sel_group, "_ori_cor_matrix.csv")))
-      write.csv(occor.p, file = file.path(output_dir, paste0(sel_group, "_ori_pval_matrix.csv")))
-      write.csv(cor, file = file.path(output_dir, paste0(sel_group, "_cor_matrix.csv")))
+      # write.csv(occor.r, file = file.path(output_dir, paste0(sel_group, "_ori_cor_matrix.csv")))
+      # write.csv(occor.p, file = file.path(output_dir, paste0(sel_group, "_ori_pval_matrix.csv")))
+      data.table::fwrite(cor, file = file.path(output_dir, paste0(sel_group, "_Cor_Matrix.csv")), sep = ",", quote = FALSE, row.names = TRUE)
+      cor_list <- get_full_edge_list(cor)
+      data.table::fwrite(cor_list, file = file.path(output_dir, paste0(sel_group, "_Cor_Edgelist.csv")), sep = ",", quote = FALSE, row.names = TRUE)
+
     }
   } else if (method == "sparcc") {
     result <- sparcc.micro(data = t(table1), R = R, ncpus = ncpus)
@@ -74,9 +79,11 @@ corMicro <- function(table1,
     cor <- occor.r
 
     if (vose == TRUE) {
-      write.csv(occor.r, file = file.path(output_dir, paste0(sel_group, "_sparcc_ori_cor_matrix.csv")))
-      write.csv(occor.p, file = file.path(output_dir, paste0(sel_group, "_sparcc_ori_pval_matrix.csv")))
-      write.csv(cor, file = file.path(output_dir, paste0(sel_group, "_sparcc_cor_matrix.csv")))
+      # write.csv(occor.r, file = file.path(output_dir, paste0(sel_group, "_sparcc_ori_cor_matrix.csv")))
+      # write.csv(occor.p, file = file.path(output_dir, paste0(sel_group, "_sparcc_ori_pval_matrix.csv")))
+      write.csv(cor, file = file.path(output_dir, paste0(sel_group, "_Sparcc_Cor_Matrix.csv")))
+      cor_list <- get_full_edge_list(cor)
+      data.table::fwrite(cor_list, file = file.path(output_dir, paste0(sel_group, "_Sparcc_Cor_Edgelist.csv")), sep = ",", quote = FALSE, row.names = TRUE)
     }
   } else if (method == "SpiecEasi") {
     occor <- SpiecEasi::spiec.easi(data = as.matrix(t(table1)), method = 'glasso', lambda.min.ratio = 0.01,
@@ -87,12 +94,14 @@ corMicro <- function(table1,
 
     cor <- adjacency_unweight
 
-    write.table(adjacency_unweight, file = file.path(output_dir, paste0(sel_group, '_SpiecEasi_unweight_glasso.tsv')),
+    write.table(adjacency_unweight, file = file.path(output_dir, paste0(sel_group, '_SpiecEasi_Unweight_Glasso.tsv')),
                 col.names = NA, sep = '\t', quote = FALSE)
+    cor_list <- get_full_edge_list(cor)
+    data.table::fwrite(cor_list, file = file.path(output_dir, paste0(sel_group, "_SpiecEasi_Cor_Edgelist.csv")), sep = ",", quote = FALSE, row.names = TRUE)
   }
 
-  cor_list <- get_full_edge_list(cor)
-  return(list(cor = cor, cor_list = cor_list))
+
+  return(list(cor = cor))
 }
 
 

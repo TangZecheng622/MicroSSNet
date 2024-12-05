@@ -13,7 +13,7 @@
 determineCharacteristics <- function(network) {
 
 
-  output_dir <- './ssn/properties/'
+  output_dir <- './SSN/Properties/'
   if (!dir.exists(output_dir)) {
     dir.create(output_dir, recursive = TRUE)
   }
@@ -39,11 +39,11 @@ determineCharacteristics <- function(network) {
       igraph::E(single_sample_graph)$weight <- abs(sample_netw$Weight)
 
 
-      ssn_p <- node_properties2(igraph = single_sample_graph, zipi = TRUE, tag = sample, RM = FALSE, output = file.path(output_dir, "zipi/"))
+      ssn_p <- node_properties2(igraph = single_sample_graph, zipi = TRUE, tag = sample, RM = FALSE, output = file.path(output_dir, "ZiPi/"))
 
 
       local_pro <- ssn_p[[1]]
-      write.table(local_pro, file = file.path(output_dir, paste0(sample, '_ssn_properties.tsv')), sep = "\t", quote = FALSE, row.names = FALSE)
+      write.table(local_pro, file = file.path(output_dir, paste0(sample, '_SSN_Properties.tsv')), sep = "\t", quote = FALSE, row.names = FALSE)
 
 
       global_pro <- ssn_p[[2]]
@@ -55,7 +55,7 @@ determineCharacteristics <- function(network) {
 
 
   combined_df <- do.call(rbind, global_list)
-  write.table(combined_df, file = file.path(output_dir, 'ssn_glo_properties.tsv'), sep = "\t", quote = FALSE, row.names = FALSE)
+  write.table(combined_df, file = file.path(output_dir, 'SSN_Global_properties.tsv'), sep = "\t", quote = FALSE, row.names = FALSE)
 
   return(combined_df)
 }

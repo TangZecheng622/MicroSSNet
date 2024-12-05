@@ -9,7 +9,7 @@
 #' @param showType Character. Options for additional plot features: `"centroid"` or `"ellipse"`. Default is NULL.
 #' @param mode Character. Analysis mode: `"PCA"` or `"PCOA"`. Default is `"PCOA"`.
 #' @param offset Logical. If TRUE, combines two columns into "edges" in the input table. Default is FALSE.
-#' @importFrom vegan adonis2
+#' @importFrom vegan adonis2 vegdist
 #' @importFrom ggplot2 ggplot aes geom_point geom_segment geom_label labs theme_bw theme element_text stat_ellipse
 #' @importFrom dplyr summarise group_by left_join
 #' @importFrom ggsci scale_color_aaas scale_fill_aaas
@@ -37,10 +37,13 @@ PCA_draw <- function(table, group_df, vscol, save = TRUE, showType = NULL, mode 
     table <- table[, -1]
     rownames(table) <- row_names
     df_t <- as.matrix(t(table))
+#    df_t <- df_t[rowSums(df_t>0)>0,]
     df_t <- df_t[, apply(df_t, 2, var) != 0]
     filename <- "edges_weight"
   } else {
     df_t <- as.matrix(t(table))
+    df_t <- df_t[, apply(df_t, 2, var) != 0]
+#    df_t <- df_t[rowSums(df_t>0)>0,]
     filename <- "nodes_weight"
   }
 
@@ -110,10 +113,12 @@ PCA_draw <- function(table, group_df, vscol, save = TRUE, showType = NULL, mode 
     }
 
     if (save) {
-      output_path <- paste0("./pca_result/", groupVS_String, "_", filename, "_pca_plot.pdf")
+      output_path <- paste0("./SSN/PCA_Result/", groupVS_String, "_", filename, "_PCA_Plot_2d.pdf")
+      output_file <- paste0("./SSN/PCA_Result/", groupVS_String, "_", filename, "_PCA.csv")
       if (!dir.exists(dirname(output_path))) {
         dir.create(dirname(output_path), recursive = TRUE)
       }
+      write.csv(pca_data,output_file)
       pdf(output_path, width = 6, height = 8)
       print(plot_pca)
       dev.off()
@@ -121,9 +126,11 @@ PCA_draw <- function(table, group_df, vscol, save = TRUE, showType = NULL, mode 
       print(plot_pca)
     }
   } else if (mode == "PCOA") {
+#    dist_matrix <- vegan::vegdist(df_t,method = "bray")
     dist_matrix <- dist(df_t)
     pcoa_res <- cmdscale(dist_matrix, k = 2)
-    group_df <- group_df[group_df[, 1] %in% rownames(pcoa_res), ]
+    group_df <- group_df[match(rownames(pcoa_res), group_df$sample), ]
+
     pcoa_data <- data.frame(PCoA1 = pcoa_res[, 1], PCoA2 = pcoa_res[, 2], vscol = group_df[[vscol]])
     colnames(pcoa_data)[3] <- vscol
 
@@ -180,10 +187,12 @@ PCA_draw <- function(table, group_df, vscol, save = TRUE, showType = NULL, mode 
     }
 
     if (save) {
-      output_path <- paste0("./pcoa_result/", groupVS_String, "_", filename, "_pcoa_plot.pdf")
+      output_path <- paste0("./SSN/PCoA_Result/", groupVS_String, "_", filename, "_PCoA_Plot_2d.pdf")
+      output_file <- paste0("./SSN/PCoA_Result/", groupVS_String, "_", filename, "_PCoA.csv")
       if (!dir.exists(dirname(output_path))) {
         dir.create(dirname(output_path), recursive = TRUE)
       }
+      write.csv(pcoa_data,output_file)
       pdf(output_path, width = 6, height = 8)
       print(plot_pcoa)
       dev.off()

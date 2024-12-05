@@ -58,13 +58,13 @@ grobal_pro_compare <- function(graph, type = "gnm", step = 100, netName = sel_gr
   fitinf <- fit_poweRlaw(graph)
   if(is.na(fitinf[[1]])) {
 
-    message("Fitting failed: Unable to determine network type due to fitting issues.")
+    message("\nFitting failed: Unable to determine network type due to fitting issues.\n")
   } else if (fitinf[[1]] <= 0.05) {
-    message("This network may be a Scale-free network!")
+    message("\nThis network may be a Scale-free network!\n")
   } else if (sum_net[3, netName] > sum_net[3, "Means"]) {
-    message("This network may be a Small-World network!")
+    message("\nThis network may be a Small-World network!\n")
   } else {
-    message("This network may be a random network or some other type of network!")
+    message("\nThis network may be a random network or some other type of network!\n")
   }
 
   return(list(sum_net, fitinf[[2]]))

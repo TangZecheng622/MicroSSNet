@@ -38,7 +38,7 @@ scale_network <- function(network, offset = FALSE, vose = FALSE, group = "Total"
 
   # Optionally save the scaled network to a file
   if (vose) {
-    file_name <- paste0("ssn/Scaled_", group, "_-1_1scaled.tsv")
+    file_name <- paste0("./SSN/ssPCC/Scaled_", group, "_-1_1scaled.tsv")
     dir_path <- dirname(file_name)
     if (!dir.exists(dir_path)) {
       dir.create(dir_path, recursive = TRUE)

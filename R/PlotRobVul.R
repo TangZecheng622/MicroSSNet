@@ -34,7 +34,8 @@ compare_rob_vul <- function(rrob_sum_list, rrob_detail_list, group_list, sel_gro
   }
 
   rrob_detail$group <- factor(rrob_detail$group, levels = group_list)
-
+  write.csv(x = rrob_detail,file = paste0(sel_group,"_Random_Removal_Detail.csv"))
+  write.csv(x = rrob_sum,file = paste0(sel_group,"_Random_Removal_Summary.csv"))
   # Plot robustness summary
   p_rrob_sum <- plot_robustness_summary(rrob_sum)
   ggplot2::ggsave(filename = file.path(output_dir, paste0(sel_group, "_random_removal_Mean_SD.pdf")),
@@ -43,17 +44,17 @@ compare_rob_vul <- function(rrob_sum_list, rrob_detail_list, group_list, sel_gro
   # Plot robustness detail
   prrob_detail <- plot_robustness_detail(rrob_detail, compare_groups)
   ggplot2::ggsave(filename = file.path(output_dir, paste0(sel_group, "_random_removal_Robustness.pdf")),
-                  plot = prrob_detail, height = 6, width = 12)
+                  plot = prrob_detail, height = 12, width = 12)
 
   # Plot vulnerability detail
   pvul_detail <- plot_vulnerability_detail(rrob_detail, compare_groups)
   ggplot2::ggsave(filename = file.path(output_dir, paste0(sel_group, "_random_removal_Vulnerability.pdf")),
-                  plot = pvul_detail, height = 6, width = 12)
+                  plot = pvul_detail, height = 12, width = 12)
 
   # Plot complexity detail
   cpx_detail <- plot_complexity_detail(rrob_detail, compare_groups)
   ggplot2::ggsave(filename = file.path(output_dir, paste0(sel_group, "_random_removal_Complexity.pdf")),
-                  plot = cpx_detail, height = 6, width = 12)
+                  plot = cpx_detail, height = 12, width = 12)
 }
 
 

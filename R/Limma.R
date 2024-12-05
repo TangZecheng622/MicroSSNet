@@ -46,6 +46,7 @@ Differential_nodes <- function(network, sample_metadata, offset = FALSE, log_tra
     network <- log2(network + 1)
   }
 
+
   # Initialize list to store results of each comparison
   res_list <- list()
 
@@ -93,7 +94,7 @@ Differential_nodes <- function(network, sample_metadata, offset = FALSE, log_tra
     )
 
   if (save) {
-    output_path <- paste0("./limma_result/", typename, "_Limma_Result.tsv")
+    output_path <- paste0("./SSN/Limma_Result/", typename, "_Limma_Result.tsv")
     if (!dir.exists(dirname(output_path))) {
       dir.create(dirname(output_path), recursive = TRUE)
     }
@@ -105,15 +106,16 @@ Differential_nodes <- function(network, sample_metadata, offset = FALSE, log_tra
     pv <- PlotVolcano(total_res, typename)
 
     if (save) {
-      output_path <- paste0("./limma_result/", typename, "_Limma_Volcano.pdf")
+      output_path <- paste0("./SSN/Limma_Result/", typename, "_Limma_Volcano.pdf")
       if (!dir.exists(dirname(output_path))) {
         dir.create(dirname(output_path), recursive = TRUE)
       }
-      grDevices::pdf(output_path, width = 6, height = 8)
+      grDevices::pdf(output_path, width = 10, height = 8)
       print(pv)
       grDevices::dev.off()
     } else {
       print(pv)
     }
   }
+  return(list(LimmaResult = total_res,LimmaPlot = plot))
 }

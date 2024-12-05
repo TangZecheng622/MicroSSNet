@@ -50,7 +50,10 @@ PlotVolcano <- function(total_res, typename) {
       ggplot2::geom_col(data = res_bg, ggplot2::aes(x = group, y = min_log2FC), fill = "grey85", width = 0.8, alpha = 0.5) +
       ggplot2::geom_jitter(data = total_res, ggplot2::aes(x = group, y = logFC, color = Regulation), size = 3, width = 0.4, alpha = 0.7) +
       ggplot2::scale_color_manual(values = c("Up" = "#e42313", "Down" = "#0061d5", "NS" = "#8b8c8d")) +
+      ggplot2::geom_col(data = res_bg, ggplot2::aes(x = group, y = 1,fill = group), width = 0.8) +
+      ggplot2::geom_col(data = res_bg, ggplot2::aes(x = group, y = -1,fill = group), width = 0.8) +
       ggsci::scale_fill_npg() +
+      ggplot2::geom_text(data = res_bg,ggplot2::aes(x = group, y = 0, label = group),size = 4,color = "#dbebfa")+
       ggplot2::theme_classic() +
       ggplot2::theme(
         axis.line.x = ggplot2::element_blank(),

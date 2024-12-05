@@ -51,7 +51,7 @@ bridge_network <- function(
   group_colors <- stats::setNames(c("#B1CE46", "#9DC3E7"), c(table1name, table2name))
 
   # 3. Generate Main Network Plot
-  pdf(file.path(output_path, paste0(sel_group, "_birnetwork_plot.pdf")), width = 7, height = 5)
+  pdf(file.path(output_path, paste0(sel_group, "_BirNetwork_Plot.pdf")), width = 7, height = 5)
   plot_main_network(bircor_filtered, groups, group_colors)
   dev.off()
 
@@ -77,7 +77,7 @@ bridge_network <- function(
   )
 
   # Plot bridge centrality
-  pdf(file.path(output_path, paste0(sel_group, "_bridge_centrality_plot.pdf")), width = 6, height = 12)
+  pdf(file.path(output_path, paste0(sel_group, "_Bridge_Centrality_Plot.pdf")), width = 6, height = 12)
   plot_bridge_centrality(bridge_centrality)
   dev.off()
 
@@ -87,7 +87,7 @@ bridge_network <- function(
   group_colors_extended <- c("#B1CE46", "#9DC3E7", "#f27970")
   names(group_colors_extended) <- c(table1name, table2name, "Bridge Nodes")
 
-  pdf(file.path(output_path, paste0(sel_group, "_bridge_network_plot.pdf")), width = 7, height = 5)
+  pdf(file.path(output_path, paste0(sel_group, "_Bridge_Network_Plot.pdf")), width = 7, height = 5)
   plot_bridge_network(sub_network, groups_new, group_colors_extended, prediction)
   dev.off()
 }
@@ -223,7 +223,7 @@ define_new_groups <- function(otu_positions, sup_positions, bridge_nodes, table1
 plot_bridge_network <- function(network, groups, colors, prediction) {
   qgraph::qgraph(
     network,
-    vsize = 3,
+    vsize = 1,
     layout = "spring",
     color = colors,
     groups = groups,

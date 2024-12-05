@@ -14,6 +14,7 @@
 #'   \item{group_list}{Unique groups extracted from `group_df`.}
 #' @export
 process_group_and_table <- function(table, group_df = NULL, vscol) {
+  # group_list <- NULL
   # Check if group_df is provided
   if (!is.null(group_df)) {
     # Detect column names in group_df
@@ -64,6 +65,7 @@ process_group_and_table <- function(table, group_df = NULL, vscol) {
     # Filter both table and group_df to include only common samples
     table <- table[, common_samples, drop = FALSE]
     group_df <- group_df[group_df$sample %in% common_samples, ]
+    group_list <- unique(group_df$group)
   }
 
   # Return modified table, group_df, and group_list as a list

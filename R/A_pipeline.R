@@ -118,9 +118,7 @@ aggregation_netpipeline <- function(
   if (!is.character(output_dir)) stop("Error: 'output_dir' must be a character string.")
 
   # Create output directory if it doesn't exist
-  if (!dir.exists(output_dir)) {
-    dir.create(output_dir, recursive = TRUE)
-  }
+  create_output_dir(output_dir)
 
   # Initialize lists to store robustness results
   rrob_sum_list <- list()
@@ -135,7 +133,9 @@ aggregation_netpipeline <- function(
   for (sel_group in group_list) {
     # sel_group <- group_list[[1]]
     message("Processing group: ", sel_group)
-
+    # Create output directory if it doesn't exist
+    group_output_dir <- file.path(output_dir, sel_group)
+    create_output_dir(group_output_dir)
     # Extract abundance table for the selected group
     sel_samples <- group_df$sample[group_df$group == sel_group]
     sel_species_df <- table1[, sel_samples, drop = FALSE]
@@ -148,7 +148,6 @@ aggregation_netpipeline <- function(
     # Calculate correlation matrix
     if (!is.null(cor_table_list) && !is.null(cor_table_list[[sel_group]])) {
       cor <- cor_table_list[[sel_group]]
-      cor <- utils::read.csv("unwarming_cor_matrix.csv",row.names = 1)
 
     } else {
       cor_result <- corMicro(
@@ -160,7 +159,7 @@ aggregation_netpipeline <- function(
         ncpus = ncpus,
         p.adj = p.adj,
         sel_group = sel_group,
-        output_dir = output_dir
+        output_dir = group_output_dir
       )
       cor <- cor_result[[1]]
     }
@@ -171,24 +170,27 @@ aggregation_netpipeline <- function(
     igraph::E(g)$weight <- abs(igraph::E(g)$weight)
 
     # Save network graph
-    igraph::write_graph(g, file.path(output_dir, paste0(sel_group, '.net.graphml')), format = 'graphml')
-    igraph::write_graph(g, file.path(output_dir, paste0(sel_group, '.net.gml')), format = 'gml')
+    igraph::write_graph(g, file.path(group_output_dir, paste0(sel_group, '.Net.graphml')), format = 'graphml')
+    igraph::write_graph(g, file.path(group_output_dir, paste0(sel_group, '.Net.gml')), format = 'gml')
 
     # Calculate network properties
-    pro <- node_properties(g, clu_method = clu_method, zipi = zipi, tag = sel_group, output = output_dir)
+    zipi_output_dir <- file.path(group_output_dir,"ZiPi")
+    create_output_dir(zipi_output_dir)
+
+    pro <- node_properties(g, clu_method = clu_method, zipi = zipi, tag = sel_group, output =  zipi_output_dir)
     local_pro <- pro[[1]]
     global_pro <- pro[[2]]
 
     # Save network properties
-    write.csv(local_pro, file.path(output_dir, paste0(sel_group, "_local_properties.csv")), row.names = FALSE)
-    write.csv(global_pro, file.path(output_dir, paste0(sel_group, "_global_properties.csv")), row.names = FALSE)
+    write.csv(local_pro, file.path(group_output_dir, paste0(sel_group, "_Local_Properties.csv")), row.names = FALSE)
+    write.csv(global_pro, file.path(group_output_dir, paste0(sel_group, "_Global_Properties.csv")), row.names = FALSE)
 
     # Network visualization
     if (!is.null(tax)) {
       # If taxonomic information is provided, use plotnetwork_tax function (implementation needed)
       message("Taxonomic information provided, but 'plotnetwork_tax' function is not implemented in this context.")
     } else {
-      plotnetwork(g = g, clu_method = clu_method, tag = sel_group, df = sel_species_df, node_cluster = node.cluster, output_dir = output_dir)
+      plotnetwork(g = g, clu_method = clu_method, tag = sel_group, df = sel_species_df, node_cluster = node.cluster, output_dir = group_output_dir)
     }
 
     # Compare with random network
@@ -196,8 +198,8 @@ aggregation_netpipeline <- function(
       compare_rmc <- grobal_pro_compare(graph = g, step = step, netName = sel_group, ncpus = ncpus)
       compare_table <- compare_rmc[[1]]
       compare_p <- compare_rmc[[2]]
-      write.csv(compare_table, file.path(output_dir, paste0(sel_group, "_compare_rmc.csv")), row.names = TRUE)
-      ggplot2::ggsave(filename = file.path(output_dir, paste0(sel_group, "_compare_rmc_Degree_Distribution.pdf")),
+      write.csv(compare_table, file.path(group_output_dir, paste0(sel_group, "_Compare_RMC.csv")), row.names = TRUE)
+      ggplot2::ggsave(filename = file.path(group_output_dir, paste0(sel_group, "_Degree_Distribution.pdf")),
                       plot = compare_p, width = 10, height = 6, dpi = 300)
     }
 

@@ -7,10 +7,15 @@
 #' @param vscol1 Character string specifying the column name in `group_df` that indicates the primary group labels.
 #' @param vscol2 Character string specifying the column name in `group_df` that indicates the secondary group labels.
 #' @param ssn_method Character string specifying the method for single-sample network construction. Options are "SSN" or "Lioness". Default is "SSN".
-#' @param control Character string specifying the control group name in `group_df`. Used when `ssn_method` is "SSN". Default is "control".
-#' @param top Numeric value specifying the number of top edges to select. If `top > 0`, selects top `top` edges based on weight. Default is 0 (no filtering).
+#' @param control Character string specifying the control group.
+#'        Can take one of the following values:
+#'        - "all" : Use all samples for network construction (no control group).
+#'        - "pergroup" : Perform single-sample PCC for each group separately.
+#'        - A specific group name (e.g., "control", "CK") : Specify a group name within `group_df` to use as the control group for network construction.
+#'        Default is "control".#' @param top Numeric value specifying the number of top edges to select. If `top > 0`, selects top `top` edges based on weight. Default is 0 (no filtering).
 #' @param pvl_threshold Numeric value between 0 and 1 for prevalence threshold in filtering species. Default is 0.5.
 #' @param r_threshold Numeric value for the correlation coefficient threshold. Edges with absolute correlation below this value will be removed. Default is 0.3.
+#' @param log Logical value indicating whether to table1 to the log(table1 + 10e-16) . Default is TRUE.
 #' @param scale Logical value indicating whether to scale network weights to the range . Default is TRUE.
 #' @param save Logical value indicating whether to save the outputs to files. Default is TRUE.
 #' @return The function outputs various files and plots in the `./ssn/` directory.
@@ -66,14 +71,19 @@ ssn_pipeline <- function(
     table1,
     group_df = NULL,
     vscol1,
-    vscol2,
-    ssn_method = "SSN",
-    control = "control",
-    top = 0,
+    vscol2 = vscol1,
+    ssn_method = "ssPCC",
+    control = "pergroup",
+    log = TRUE,
+    top = NULL,
     pvl_threshold = 0.5,
     r_threshold = 0.3,
     scale = TRUE,
-    save = TRUE
+    save = TRUE,
+    pca = TRUE,
+    pcoa = TRUE,
+    limma = TRUE,
+    property = TRUE
 ) {
 
   # Parameter validation
@@ -81,13 +91,20 @@ ssn_pipeline <- function(
   if (!is.null(group_df) && !is.data.frame(group_df)) stop("Error: 'group_df' must be a data frame or NULL.")
   if (!is.character(vscol1)) stop("Error: 'vscol1' must be a character string.")
   if (!is.character(vscol2)) stop("Error: 'vscol2' must be a character string.")
-  if (!ssn_method %in% c("SSN", "Lioness")) stop("Error: 'ssn_method' must be either 'SSN' or 'Lioness'.")
-  if (!is.character(control)) stop("Error: 'control' must be a character string.")
+  if (!ssn_method %in% c("ssPCC", "Lioness")) stop("Error: 'ssn_method' must be either 'ssPCC' or 'Lioness'.")
+  if (!is.character(control) || !(control %in% c("all", "pergroup"))) {
+    stop("Error: 'control' must be one of the following: 'all', 'pergroup', or a character string specifying a valid control group name (e.g., 'control').")
+  }
   if (!is.null(top) && (!is.numeric(top) || top <= 0)) stop("Error: 'top' must be a positive number or NULL.")
   if (!is.numeric(pvl_threshold) || pvl_threshold < 0 || pvl_threshold > 1) stop("Error: 'pvl_threshold' must be between 0 and 1.")
   if (!is.numeric(r_threshold)) stop("Error: 'r_threshold' must be numeric.")
   if (!is.logical(scale)) stop("Error: 'scale' must be a logical value.")
+  if (!is.logical(log)) stop("Error: 'log' must be a logical value.")
   if (!is.logical(save)) stop("Error: 'save' must be a logical value.")
+  if (!is.logical(pca)) stop("Error: 'pca' must be a logical value.")
+  if (!is.logical(pcoa)) stop("Error: 'pcoa' must be a logical value.")
+  if (!is.logical(limma)) stop("Error: 'limma' must be a logical value.")
+  if (!is.logical(property)) stop("Error: 'property' must be a logical value.")
 
   # Process group and table data
   check_result <- process_group_and_table(table = table1, group_df = group_df, vscol = vscol1)
@@ -124,20 +141,29 @@ ssn_pipeline <- function(
       replace(is.na(.), 0) %>%                                              # 填充缺失值为0
       tibble::column_to_rownames(var = "row_name")                           # 将"row_name"列转换回行名
   }
-  table1 <- merged_table
+  table1 <- table1[rownames(merged_table),]
+
+  if(log == TRUE){
+    table1 <- log(t(table1)+10e-16)
+  }
+
   # Create directory for output
-  if (!dir.exists("ssn")) dir.create("ssn")
+  if (!dir.exists("SSN")) dir.create("SSN")
 
   # Single Sample Network Construction
-  if (ssn_method == "SSN") {
-    if (is.null(control)) {
+  if (ssn_method == "ssPCC") {
+
+    if (control == "all") {
       sspcc_cal(sel_otu_table = table1)
-    } else {
+    }else if (control == "pergroup"){
+      sspcc_cal3(sel_otu_table = table1,group_df,group = vscol1)
+    }else{
       sspcc_cal2(sel_otu_table = table1, group_df = group_df, ck = control, group = vscol1)
+      group_df[[vscol2]][group_df[[vscol1]] == control] <- "control"
     }
     n_genes <- nrow(table1)
     cor <- make_one_edgelist_file_general(
-      dir = "./ssn/sspcc/",
+      dir = "./SSN/ssPCC/",
       pattern = "ssPCC.*\\.tsv",
       file_name = "SSN-Total",
       col_n = 4,
@@ -179,15 +205,27 @@ ssn_pipeline <- function(
   SOW <- Calculate_sum_of_weights(network = cor_top)
 
   # PCA and PCoA analysis
-  PCA_draw(SOW, group_df, vscol2, save = save, showType = "centroid", mode = "PCA", offset = FALSE)
-  PCA_draw(cor_top, group_df, vscol2, save = save, showType = "centroid", mode = "PCA", offset = TRUE)
-  PCA_draw(SOW, group_df, vscol2, save = save, showType = "centroid", mode = "PCOA", offset = FALSE)
-  PCA_draw(cor_top, group_df, vscol2, save = save, showType = "centroid", mode = "PCOA", offset = TRUE)
+
+  if(pca == TRUE){
+    PCA_draw(SOW, group_df, vscol2, save = save, showType = "centroid", mode = "PCA", offset = FALSE)
+    PCA_draw(cor_top, group_df, vscol2, save = save, showType = "centroid", mode = "PCA", offset = TRUE)
+  }
+  if(pcoa == TRUE){
+    PCA_draw(SOW, group_df, vscol2, save = save, showType = "centroid", mode = "PCOA", offset = FALSE)
+    PCA_draw(cor_top, group_df, vscol2, save = save, showType = "centroid", mode = "PCOA", offset = TRUE)
+  }
+
 
   # Differential analysis using limma
-  Differential_nodes(SOW, group_df, offset = FALSE, log_transform = FALSE, vscol = vscol2, save = save, plot = TRUE)
-  Differential_nodes(cor_top, group_df, offset = TRUE, log_transform = FALSE, vscol = vscol2, save = save, plot = FALSE)
+  if(limma == TRUE){
+    Differential_nodes(SOW, group_df, offset = FALSE, log_transform = FALSE, vscol = vscol2, save = save, plot = TRUE)
+    Differential_nodes(cor_top, group_df, offset = TRUE, log_transform = FALSE, vscol = vscol2, save = save, plot = FALSE)
+  }
+
 
   # Network properties analysis
-  determineCharacteristics(cor_top)
+  if(property == TRUE){
+    determineCharacteristics(cor_top)
+  }
+
 }

@@ -74,7 +74,7 @@ ZiPiplot <- function(igraph, clu_method = "cluster_fast_greedy", output_dir = ".
 
   # Plotting
   p <- ggplot2::ggplot(zi_pi_metrics, ggplot2::aes(x = Pi, y = Zi, color = type)) +
-    ggplot2::geom_point(alpha = 0.7, size = 3) +
+    ggplot2::geom_point(alpha = 1 , size = 3) +
     ggplot2::theme_minimal() +
     ggplot2::labs(
       x = "Among-module connectivities (Pi)",
@@ -89,6 +89,12 @@ ZiPiplot <- function(igraph, clu_method = "cluster_fast_greedy", output_dir = ".
     ggplot2::geom_hline(yintercept = 2.5, linetype = "dashed", alpha = 0.5)
 
   ggplot2::ggsave(filename = output_file_pdf, plot = p, width = 8, height = 8, dpi = 800)
+
+  # g <- ggplot2::ggplotGrob(p)
+  # width <- grid::convertWidth(sum(g$widths), "in", valueOnly = TRUE)
+  # height <- grid::convertHeight(sum(g$heights), "in", valueOnly = TRUE)
+  #
+  # ggplot2::ggsave("plot.png", plot = p, width = width, height = height, units = "in")
 
   return(zi_pi_metrics)
 }
