@@ -20,7 +20,7 @@ process_group_and_table <- function(table, group_df = NULL, vscol) {
     # Detect column names in group_df
     strings <- colnames(group_df)
     sample_match <- grepl("sample", strings, ignore.case = TRUE)
-    group_match <- grepl(vscol, strings, ignore.case = TRUE)
+    group_match <- grepl(paste0("^", vscol, "$"), strings, ignore.case = TRUE)
 
     # Check for 'sample' column
     if (any(sample_match)) {

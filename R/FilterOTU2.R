@@ -15,7 +15,7 @@ filter_OTU2 <- function(otu_table, Pre = NULL) {
   }
 
   if (!is.null(Pre)) {
-    prevalence <- rowSums(otu_table > 0)
+    prevalence <- rowSums(otu_table != 0)
     otu_table_filtered <- otu_table[prevalence >= round(ncol(otu_table) * Pre), ]
     return(otu_table_filtered)
   } else {

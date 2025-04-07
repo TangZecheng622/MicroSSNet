@@ -24,6 +24,8 @@ scale_network <- function(network, offset = FALSE, vose = FALSE, group = "Total"
   # Separate edge columns and weight columns
   edges <- network[, 1:2]
   weights <- network[, 3:ncol(network)]
+  weights <- as.data.frame(lapply(weights, as.numeric))
+
 
   # Scale weights to [-1, 1] using the maximum absolute value
   max_weight <- max(abs(weights), na.rm = TRUE)

@@ -42,9 +42,15 @@ sspcc_cal <- function(sel_otu_table,base_correlation = NULL) {
 
     sample_table <- sel_otu_table_lg[, -num, drop = FALSE]
     sample_correlation <- corMicro(sample_table, method = "pearson", r.threshold = 0, p.threshold = 1, sel_group = sampleID, vose = FALSE)[[1]]
+    sample_correlation[is.na(sample_correlation)] <- 0
+
+    # 限制 PCC 值范围
+    base_correlation <- pmin(pmax(base_correlation, -(1-1e-10)), (1-1e-10))
+    sample_correlation <- pmin(pmax(sample_correlation, -(1-1e-10)), (1-1e-10))
 
     # Compute differential PCC and significance
-    sample_correlation[is.na(sample_correlation)] <- 0
+
+    sample_correlation <- sample_correlation[rownames(base_correlation),colnames(base_correlation)]
     delta_PCC <- base_correlation - sample_correlation
     Zvals <- delta_PCC / (1 - (sample_correlation^2)) * (total_num - 2)
     Zvals_vect <- c(Zvals)
@@ -100,13 +106,14 @@ sspcc_cal2 <- function(sel_otu_table, group_df, ck = "CK", group = "group") {
   # Compute base PCC matrix for control group
   ck_matrix <- corMicro(ck_otu_table_lg, method = "pearson", r.threshold = 0, p.threshold = 1, sel_group = ck, vose = FALSE)[[1]]
   sel_otu_table_lg <- sel_otu_table[, !colnames(sel_otu_table) %in% sel_ck, drop = FALSE]
-
+  # sel_otu_table_lg <- sel_otu_table
   total_num <- ncol(ck_otu_table)
   sel_samples <- colnames(sel_otu_table)
-  sspcc_cal(ck_otu_table,base_correlation = ck_matrix)
+  # sspcc_cal(ck_otu_table,base_correlation = ck_matrix)
 
-  for (num in seq_len(ncol(sel_otu_table))) {
-    sampleID <- colnames(sel_otu_table)[num]
+  for (num in seq_len(ncol(sel_otu_table_lg))) {
+    # num=7
+    sampleID <- colnames(sel_otu_table_lg)[num]
     cat("Processing Sample:", sampleID, "\n")
 
     # Construct sample matrix including control group
@@ -115,6 +122,11 @@ sspcc_cal2 <- function(sel_otu_table, group_df, ck = "CK", group = "group") {
 
     # Compute differential PCC and significance
     sample_correlation <- sample_correlation[rownames(ck_matrix), rownames(ck_matrix)]
+    sample_correlation[is.na(sample_correlation)] <- 0
+    # 限制 PCC 值范围
+    ck_matrix <- pmin(pmax(ck_matrix, -(1-1e-10)), (1-1e-10))
+    sample_correlation <- pmin(pmax(sample_correlation, -(1-1e-10)), (1-1e-10))
+
     delta_PCC <- sample_correlation - ck_matrix
     Zvals <- delta_PCC / (1 - (ck_matrix^2)) * (total_num - 1)
     Zvals_vect <- c(Zvals)
@@ -150,29 +162,34 @@ sspcc_cal3 <- function(sel_otu_table, group_df, group = "group",base_correlation
   # Check and process group information
   group_df[[group]] <- as.factor(group_df[[group]])
   for(i in unique(group_df[[group]])){
+    # i <- unique(group_df[[group]])[[1]]
+    print(paste("Group:",i))
     sel_i <- group_df$sample[group_df[[group]] == i]
     sel_i <- sel_i[sel_i %in% colnames(sel_otu_table)]
     sel_otu_table_lg <- sel_otu_table[, sel_i, drop = FALSE]
 
-    if (!is.null(base_correlation)){
-      base_correlation = base_correlation
-    }else{
-      cat("Base correlation is NULL, computing base correlation...\n")
-      base_correlation <- corMicro(sel_otu_table_lg, method = "pearson", r.threshold = 0, p.threshold = 1, sel_group = "ssn", vose = FALSE)[[1]]
-    }
+
+    cat("Base correlation is NULL, computing base correlation...\n")
+    base_correlation <- corMicro(sel_otu_table_lg, method = "pearson", r.threshold = 0, p.threshold = 1, sel_group = "ssn", vose = FALSE)[[1]]
     base_correlation[is.na(base_correlation)] <- 0
     sel_samples <- colnames(sel_otu_table_lg)
     total_num <- length(sel_samples)
     # Construct single-sample PCC for each sample
     for (num in seq_len(ncol(sel_otu_table_lg))) {
+      # num <- 1
       sampleID <- colnames(sel_otu_table_lg)[num]
       cat("Processing Sample:", sampleID, "\n")
 
       sample_table <- sel_otu_table_lg[, -num, drop = FALSE]
       sample_correlation <- corMicro(sample_table, method = "pearson", r.threshold = 0, p.threshold = 1, sel_group = sampleID, vose = FALSE)[[1]]
-
-      # Compute differential PCC and significance
       sample_correlation[is.na(sample_correlation)] <- 0
+
+      # 限制 PCC 值范围
+      base_correlation <- pmin(pmax(base_correlation, -(1-1e-10)), (1-1e-10))
+      sample_correlation <- pmin(pmax(sample_correlation, -(1-1e-10)), (1-1e-10))
+      # Compute differential PCC and significance
+
+      sample_correlation <- sample_correlation[rownames(base_correlation),colnames(base_correlation)]
       delta_PCC <- base_correlation - sample_correlation
       Zvals <- delta_PCC / (1 - (sample_correlation^2)) * (total_num - 2)
       Zvals_vect <- c(Zvals)
@@ -193,6 +210,7 @@ sspcc_cal3 <- function(sel_otu_table, group_df, group = "group",base_correlation
       file_name <- file.path(output_dir, paste0("ssPCC_", sampleID, ".tsv"))
       data.table::fwrite(pstat_s, file = file_name, sep = "\t")
     }
+    base_correlation <- NULL
 
   }
 

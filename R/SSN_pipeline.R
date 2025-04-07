@@ -14,6 +14,7 @@
 #'        - A specific group name (e.g., "control", "CK") : Specify a group name within `group_df` to use as the control group for network construction.
 #'        Default is "control".#' @param top Numeric value specifying the number of top edges to select. If `top > 0`, selects top `top` edges based on weight. Default is 0 (no filtering).
 #' @param pvl_threshold Numeric value between 0 and 1 for prevalence threshold in filtering species. Default is 0.5.
+#' @param dis_method Methods for calculating distance."manhattan", "euclidean", "canberra", "clark", "bray", "kulczynski", "jaccard", "gower", "altGower", "morisita", "horn", "mountford", "raup", "binomial", "chao", "cao", "mahalanobis", "chisq", "chord", "hellinger", "aitchison", or "robust.aitchison".
 #' @param r_threshold Numeric value for the correlation coefficient threshold. Edges with absolute correlation below this value will be removed. Default is 0.3.
 #' @param log Logical value indicating whether to table1 to the log(table1 + 10e-16) . Default is TRUE.
 #' @param scale Logical value indicating whether to scale network weights to the range . Default is TRUE.
@@ -77,11 +78,13 @@ ssn_pipeline <- function(
     log = TRUE,
     top = NULL,
     pvl_threshold = 0.5,
-    r_threshold = 0.3,
+    r_threshold = 0,
     scale = TRUE,
     save = TRUE,
     pca = TRUE,
     pcoa = TRUE,
+    dis_method = "euclidean",
+    showType = NULL,
     limma = TRUE,
     property = TRUE
 ) {
@@ -92,8 +95,9 @@ ssn_pipeline <- function(
   if (!is.character(vscol1)) stop("Error: 'vscol1' must be a character string.")
   if (!is.character(vscol2)) stop("Error: 'vscol2' must be a character string.")
   if (!ssn_method %in% c("ssPCC", "Lioness")) stop("Error: 'ssn_method' must be either 'ssPCC' or 'Lioness'.")
-  if (!is.character(control) || !(control %in% c("all", "pergroup"))) {
-    stop("Error: 'control' must be one of the following: 'all', 'pergroup', or a character string specifying a valid control group name (e.g., 'control').")
+  valid_values <- unique(c("all", "pergroup", group_df[[vscol1]], group_df[[vscol2]]))
+  if (!is.character(control) || !(control %in% valid_values)) {
+    stop("Error: 'control' must be one of the following: 'all', 'pergroup', or a value present in group_df's vscol1 or vscol2 columns.")
   }
   if (!is.null(top) && (!is.numeric(top) || top <= 0)) stop("Error: 'top' must be a positive number or NULL.")
   if (!is.numeric(pvl_threshold) || pvl_threshold < 0 || pvl_threshold > 1) stop("Error: 'pvl_threshold' must be between 0 and 1.")
@@ -144,7 +148,7 @@ ssn_pipeline <- function(
   table1 <- table1[rownames(merged_table),]
 
   if(log == TRUE){
-    table1 <- log(t(table1)+10e-16)
+    table1 <- as.data.frame(log10(table1+1e-10))
   }
 
   # Create directory for output
@@ -159,7 +163,11 @@ ssn_pipeline <- function(
       sspcc_cal3(sel_otu_table = table1,group_df,group = vscol1)
     }else{
       sspcc_cal2(sel_otu_table = table1, group_df = group_df, ck = control, group = vscol1)
+      group_df[[vscol2]] <- as.character(group_df[[vscol2]])  # 转为字符
       group_df[[vscol2]][group_df[[vscol1]] == control] <- "control"
+      group_df[[vscol2]] <- as.factor(group_df[[vscol2]])  # 转回因子
+      print("###Merging Tablesw###")
+
     }
     n_genes <- nrow(table1)
     cor <- make_one_edgelist_file_general(
@@ -171,13 +179,11 @@ ssn_pipeline <- function(
       col_p_n = 3,
       n_genes = n_genes
     )
+    print("###Finished Merge Tablesw###")
   }
 
   if (ssn_method == "Lioness") {
-    netFun <- function(x) {
-      cor(x, method = "pearson")
-    }
-    cor <- lionessR::lioness(table1, netFun)
+    cor <- lionessR::lioness(table1)
   }
 
   cor[is.na(cor)] <- 0
@@ -203,16 +209,17 @@ ssn_pipeline <- function(
 
   # Calculate Sum of Weights (SOW) for nodes
   SOW <- Calculate_sum_of_weights(network = cor_top)
-
+  sow_name <- paste0("./SSN/ssPCC/SOW.tsv")
+  data.table::fwrite(SOW, file = sow_name, sep = "\t", quote = FALSE, row.names = TRUE)
   # PCA and PCoA analysis
 
   if(pca == TRUE){
-    PCA_draw(SOW, group_df, vscol2, save = save, showType = "centroid", mode = "PCA", offset = FALSE)
-    PCA_draw(cor_top, group_df, vscol2, save = save, showType = "centroid", mode = "PCA", offset = TRUE)
+    PCA_draw(SOW, group_df, vscol2, save = save, showType = showType, mode = "PCA", offset = FALSE)
+    PCA_draw(cor_top, group_df, vscol2, save = save, showType = showType, mode = "PCA", offset = TRUE)
   }
   if(pcoa == TRUE){
-    PCA_draw(SOW, group_df, vscol2, save = save, showType = "centroid", mode = "PCOA", offset = FALSE)
-    PCA_draw(cor_top, group_df, vscol2, save = save, showType = "centroid", mode = "PCOA", offset = TRUE)
+    PCA_draw(SOW, group_df, vscol2, save = save, showType = showType, mode = "PCOA", offset = FALSE,method = dis_method)
+    PCA_draw(cor_top, group_df, vscol2, save = save, showType = showType, mode = "PCOA", offset = TRUE,method = dis_method)
   }
 
 
@@ -227,5 +234,5 @@ ssn_pipeline <- function(
   if(property == TRUE){
     determineCharacteristics(cor_top)
   }
-
+  return(SOW)
 }
