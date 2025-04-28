@@ -1,4 +1,33 @@
-# part1
+# aggregation_netpipeline
+
+~~~R
+aggregation_netpipeline (
+    table1,
+    tax = NULL,
+    cor_table_list = NULL,
+    group_df = NULL,
+    vscol1 = "Group",
+    pvl.threshold = 0.5,
+    top = NULL,
+    r.threshold = 0.8,
+    p.threshold = 0.05,
+    method = "pearson",
+    R = 10,
+    ncpus = 4,
+    clu_method = "cluster_fast_greedy",
+    p.adj = "fdr",
+    step = 10,
+    node.cluster = 5,
+    rm.p.list = seq(0, 0.5, by = 0.1),
+    zipi = TRUE,
+    compare_net = TRUE,
+    calculate_vul = TRUE,
+    calculate_rob = TRUE,
+    calculate_cpx = TRUE,
+    output_dir = getwd())
+~~~
+
+
 
 ### process_group_and_table函数：
 
@@ -38,7 +67,38 @@
 
 **功能**：模拟移除相应物种后的鲁棒性、复杂性、脆弱性、稳定性
 
-# part2
+# bipartite_netpipeline
+
+~~~R
+bipartite_netpipeline (
+    table1,
+    table2,
+    table1name = "domain1",
+    table2name = "domain2",
+    tax = NULL,
+    cor_table_list = NULL,
+    group_df = NULL,
+    vscol1 = "group",
+    pvl.threshold = 0.5,
+    top = NULL,
+    r.threshold = 0.8,
+    p.threshold = 0.05,
+    method = "pearson",
+    R = 10,
+    ncpus = 4,
+    clu_method = "cluster_fast_greedy",
+    p.adj = "BH",
+    step = 10,
+    rm.p.list = seq(0, 0.5, by = 0.1),
+    zipi = TRUE,
+    compare_net = TRUE,
+    calculate_vul = TRUE,
+    calculate_rob = TRUE,
+    calculate_cpx = TRUE,
+    output_dir = getwd())
+~~~
+
+
 
 ### process_group_and_table函数：
 
@@ -74,7 +134,33 @@
 
 **参数**：1.混合的丰度矩阵	2.混合的相关性矩阵	3.OTU1分组命名
 
-# part3
+# ssn_pipeline
+
+~~~R
+ssn_pipeline (
+    table1,
+    group_df = NULL,
+    vscol1,
+    vscol2 = vscol1,
+    ssn_method = "ssPCC",
+    control = "pergroup",
+    log = TRUE,
+    top = NULL,
+    pvl_threshold = 0.5,
+    r_threshold = 0,
+    scale = TRUE,
+    save = TRUE,
+    pca = TRUE,
+    pcoa = TRUE,
+    dis_method = "euclidean",
+    binary = FALSE,
+    showType = NULL,
+    limma = TRUE,
+    property = TRUE
+) 
+~~~
+
+
 
 ### process_group_and_table函数：
 
@@ -133,3 +219,4 @@
 ### determineCharacteristics函数：
 
 **功能**：计算单样品网络属性
+
