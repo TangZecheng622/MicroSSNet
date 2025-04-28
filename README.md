@@ -56,7 +56,7 @@ tab_agg_n_pip = aggregation_netpipeline (
 
 ### corMicro function
 
-**Function**: Construct a correlation matrix.
+**Function**: Construct a correlation matrix.  
  **Parameters**:
 
 1. Abundance table (`table1`)
@@ -65,7 +65,7 @@ tab_agg_n_pip = aggregation_netpipeline (
 
 ### node_properties function
 
-**Function**: Calculate global and local properties of the network.
+**Function**: Calculate global and local properties of the network.  
  **Parameters**:
 
 1. Graph object (`g`), in `graph` format
@@ -142,7 +142,7 @@ tab_n_pip = bipartite_netpipeline (
 
 ### merge_bio function
 
-**Function**: Merge two data tables.
+**Function**: Merge two data tables.  
  **Parameters**:
 
 1. `table1`, the first table
@@ -152,7 +152,7 @@ tab_n_pip = bipartite_netpipeline (
 
 ### corMicro function
 
-**Function**: Construct a correlation matrix.
+**Function**: Construct a correlation matrix.  
  **Parameters**:
 
 1. Abundance table (`table1`)
@@ -161,7 +161,7 @@ tab_n_pip = bipartite_netpipeline (
 
 ### node_properties function
 
-**Function**: Calculate global and local properties of the network.
+**Function**: Calculate global and local properties of the network.  
  **Parameters**:
 
 1. Graph object (`g`), in `graph` format
