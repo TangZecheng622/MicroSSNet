@@ -83,7 +83,7 @@ tab_agg_n_pip = aggregation_netpipeline (
 
 ### global_pro_compare function
 
-**Function**: Compare with random networks.
+**Function**: Compare with random networks.  
  **Parameters**:
 
 1. Graph object (`g`), in `graph` format
