@@ -1,7 +1,20 @@
+# Installation
+
+~~~
+install.packages("BiocManager")
+library(BiocManager)
+BiocManager::install("limma")
+install("remotes")
+remotes::install_github("zdk123/SpiecEasi")
+remotes::install_github("TangZecheng622/MicroSSNet")
+~~~
+
+
+
 # aggregation_netpipeline
 
 ~~~R
-aggregation_netpipeline (
+tab_agg_n_pip = aggregation_netpipeline (
     table1,
     tax = NULL,
     cor_table_list = NULL,
@@ -29,48 +42,63 @@ aggregation_netpipeline (
 
 
 
-### process_group_and_table函数：
+### process_group_and_table function：
 
-**功能**：匹配两个表（丰度表和分组信息表），两个表共有的保留，单独的不要
+**Function**: Align two tables (an abundance table and a group information table) by matching their shared entries. Only the common entries present in both tables are retained; any entries unique to either table are discarded.
 
-### filter_OTU2函数
+### filter_OTU2 function
 
-**功能**：根据流行度过滤
+**Function**: Perform filtering by retaining entries according to their prevalence.
 
-### filter_OTU函数
+### filter_OTU function
 
-**功能**：根据top值来筛选OTU
+**Function**: Select OTUs by sorting them based on their top values and retaining the top entries.
 
-### corMicro函数
+### corMicro function
 
-**功能**：构建相关性矩阵
+**Function**: Construct a correlation matrix.
+ **Parameters**:
 
-**参数**：1.丰度表table1	2.相关性阈值r.threshold/p.thresholde	3.构建相关性的方法method
+1. Abundance table (`table1`)
+2. Correlation thresholds (`r.threshold` / `p.threshold`)
+3. Method used for constructing the correlation matrix (`method`)
 
-### node_properties函数
+### node_properties function
 
-**功能**：计算网络的全局和局部属性
+**Function**: Calculate global and local properties of the network.
+ **Parameters**:
 
-**参数**：1.图对象g，格式为graph	2.网络聚类方法clu_method
+1. Graph object (`g`), in `graph` format
+2. Network clustering method (`clu_method`)
 
-### plotnetwork可视化网络
+### plotnetwork Visualize the network
 
-**参数**：1.图对象g，格式为graph	2.网络聚类方法clu_method	3.tag=sel_group表示分组标签	4.nod_cluster网络低于某值为灰色	5.output为输出路径
+**Parameters**:
 
-### global_pro_compare函数
+1. Graph object (`g`), in `graph` format
+2. Network clustering method (`clu_method`)
+3. `tag` = `sel_group`, indicating the grouping label
+4. `nod_cluster`, threshold below which nodes are colored gray
+5. `output`, path for saving the output
 
-**功能**：和随机网络比较
+### global_pro_compare function
 
-**参数**：1.图对象g，格式为graph	2.step随机生成次数	3.netName网络分组标签	4.ncpus所用cpu核数
+**Function**: Compare with random networks.
+ **Parameters**:
 
-### Feature.Random.removal函数
+1. Graph object (`g`), in `graph` format
+2. `step`, A randomly generated number indicating the number of times to generate random networks.
+3. `netName`, network group label
+4. `ncpus`, number of CPU cores used
 
-**功能**：模拟移除相应物种后的鲁棒性、复杂性、脆弱性、稳定性
+### Feature.Random.removal function
+
+**Function**: Simulate and evaluate the resulting robustness, complexity, vulnerability, and stability of the network following the removal of specific species.
 
 # bipartite_netpipeline
 
 ~~~R
-bipartite_netpipeline (
+tab_n_pip = bipartite_netpipeline (
     table1,
     table2,
     table1name = "domain1",
@@ -100,44 +128,57 @@ bipartite_netpipeline (
 
 
 
-### process_group_and_table函数：
+### process_group_and_table function：
 
-**功能**：匹配两个表（丰度表和分组信息表），两个表共有的保留，单独的不要
+**Function**: Retain only shared entries between an abundance table and a grouping information table.
 
-### filter_OTU2函数
+### filter_OTU2 function
 
-**功能**：根据流行度过滤
+**Function**: Perform filtering by retaining entries according to their prevalence.
 
-### filter_OTU函数
+### filter_OTU function
 
-**功能**：根据top值来筛选OTU
+**Function**: Select OTUs by sorting them based on their top values and retaining the top entries.
 
-### merge_bio函数
+### merge_bio function
 
-**功能**：合并两个表格数据
+**Function**: Merge two data tables.
+ **Parameters**:
 
-**参数**：1.表1table1	2.表2table2	3.table1表命名	4.table2表命名
+1. `table1`, the first table
+2. `table2`, the second table
+3. `table1` name assignment
+4. `table2` name assignment
 
-### corMicro函数
+### corMicro function
 
-**功能**：构建相关性矩阵
+**Function**: Construct a correlation matrix.
+ **Parameters**:
 
-**参数**：1.丰度表table1	2.相关性阈值r.threshold/p.thresholde	3.构建相关性的方法method
+1. Abundance table (`table1`)
+2. Correlation thresholds (`r.threshold` / `p.threshold`)
+3. Method for constructing the correlation matrix (`method`)
 
-### node_properties函数
+### node_properties function
 
-**功能**：计算网络的全局和局部属性
+**Function**: Calculate global and local properties of the network.
+ **Parameters**:
 
-**参数**：1.图对象g，格式为graph	2.网络聚类方法clu_method
+1. Graph object (`g`), in `graph` format
+2. Network clustering method (`clu_method`)
 
-### bridge_network桥接网络可视化
+### bridge_network Visualization
 
-**参数**：1.混合的丰度矩阵	2.混合的相关性矩阵	3.OTU1分组命名
+**Parameters**:
+
+1. Mixed abundance matrix (`abundance matrix`)
+2. Mixed correlation matrix (`correlation matrix`)
+3. Assigned group name for `OTU1`
 
 # ssn_pipeline
 
 ~~~R
-ssn_pipeline (
+tab_s_pip =ssn_pipeline (
     table1,
     group_df = NULL,
     vscol1,
@@ -162,61 +203,79 @@ ssn_pipeline (
 
 
 
-### process_group_and_table函数：
+### process_group_and_table function：
 
-**功能**：匹配两个表（丰度表和分组信息表），两个表共有的保留，单独的不要
+**Function**: Match two tables (an abundance table and a grouping information table), retaining only the shared entries and discarding those unique to either table.
 
-### filter_OTU2函数
+### filter_OTU2 function
 
-**功能**：根据流行度过滤
+**Function**: Perform filtering based on prevalence.
 
-### sspcc_cal函数
+### sspcc_cal function
 
-**功能**：将所有（n-1）样品构建为背景网络，进行单样品网络构建
+**Function**: Build a background network based on all (n-1) samples, and generate a single sample network.
+ **Parameters**:
 
-**参数**：1.丰度表
+Abundance table
 
-### sspcc_cal3函数
+### sspcc_cal3 function
 
-**功能**：根据分组信息将每组内的（n-1）样品设为背景网络
+**Function**: Based on the grouping information, construct a background network for each group using (n-1) samples.
+ **Parameters**:
 
-**参数**：1.丰度表	2.分组信息	3.分组列名vscol1
+1. Abundance table
+2. Grouping information table
+3. Grouping column name (`vscol1`)
 
-###  sspcc_cal2函数
+###  sspcc_cal2 function
 
-**功能**：选取某一组为对照组构建单样品网络
+**Function**: Construct single-sample networks by selecting a specified group as the control group.
+ **Parameters**:
 
-！！！**参数**：1.丰度表	2.分组信息	3.分组列名vscol1	4.对照组名
+1. Abundance table
+2. Grouping information table
+3. Name of the grouping column (`vscol1`)
+4. Name of the control group
 
-### make_one_edgelist_file_general函数：
+### make_one_edgelist_file_general function：
 
-**功能**：合并矩阵
+**Function**: Merge multiple matrices into a single matrix.
 
-### scale_network函数：
+### scale_network function：
 
-**功能**：标准化网络矩阵
+**Function**: Perform normalization of the network correlation matrix.
+ **Parameters**:
 
-**参数**：1.相关性矩阵 	2.是否保存
+1. Correlation matrix
+2. Option to save the normalized matrix
 
-### calculate_sum_of_weight函数
+### calculate_sum_of_weight function
 
-**功能**：计算单样品网络的节点权重
+**Function**: Calculate the node weights of single-sample networks based on the filtered network matrix.
+ **Parameters**:
 
-**参数**：过滤后的单样品网络矩阵
+Filtered single-sample network matrix
 
-### PCA_draw函数：
+### PCA_draw function：
 
-**功能**：计算PCA/PCOA的可视化
+**Function**: Perform and visualize PCA/PCoA analysis.
+ **Parameters**:
 
-**参数**：1.SOW单样品网络点的权重矩阵	2.cor_top单样品网络边的权重矩阵	3.vscol2分组列名2	4.ShowType显示PCA可视化参数，如centroid	5.mode选择PCA和PCOA	6.offset是否合并第一列和第二列信息
+1. `SOW`, node weight matrix of the single-sample network
+2. `cor_top`, edge weight matrix of the single-sample network
+3. `vscol2`, name of the second grouping column
+4. `ShowType`, parameters for PCA visualization (e.g., centroid)
+5. `mode`, selection between PCA and PCoA
+6. `offset`, whether to merge the first and second column information
 
-### Differential_nodes函数：
+### Differential_nodes function：
 
-**功能**：计算单样品网络差异节点和差异边以及可视化
+**Function**: Calculate differential nodes and edges in single-sample networks and visualize the results.
+ **Parameters**:
 
-**参数**：是否可视化
+Visualization option (`True` or `False`)
 
-### determineCharacteristics函数：
+### determineCharacteristics function：
 
-**功能**：计算单样品网络属性
+**Function**: Calculate the network properties of single-sample networks.
 
