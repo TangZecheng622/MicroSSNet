@@ -1,3 +1,16 @@
+# MicroSSNet: An R package for microbial network construction and analysis at the single-sample and aggregated levels.
+Network analysis is a fundamental tool for elucidating microbial interactions, which are crucial for understanding the mechanisms that shape ecosystem structure and function. Traditional aggregated (co-abundance/co-occurrence) network approaches that infer pairwise relationships among biological entities from large sample collections often overlook sample-specific interaction patterns. To address this, we developed MicroSSNet, an R package designed for analyzing microbial networks at both the aggregated and single-sample levels. These results highlight the importance of sample-specific interaction patterns and demonstrate that SSN-based approaches provide complementary insights into aggregated network and abundance-based approaches. MicroSSNet offers a robust framework for constructing and analyzing single-sample microbial networks, advancing microbiome research at both the individual and community scales. The package is freely available on GitHub (https://github.com/TangZecheng622/MicroSSNet).
+
+# Examples of visualizations.
+<img width="729" height="1050" alt="image" src="https://github.com/user-attachments/assets/eb9f4c5f-c334-4999-9b6c-3ffd07a5516e" />
+
+## 1.aggregated network
+<img width="1095" height="779" alt="image" src="https://github.com/user-attachments/assets/f6caad84-6ff7-4b61-b23d-cce7570a52a8" />
+
+## 2.single-sample network
+<img width="1107" height="1036" alt="image" src="https://github.com/user-attachments/assets/166b0787-0140-4fa7-9a9f-8286de89a747" />
+
+
 # Installation
 
 ~~~
@@ -14,7 +27,7 @@ remotes::install_github("TangZecheng622/MicroSSNet")
 # aggregation_netpipeline
 
 ~~~R
-tab_agg_n_pip = aggregation_netpipeline (
+aggregated_network = aggregation_netpipeline (
     table1,
     tax = NULL,
     cor_table_list = NULL,
@@ -39,6 +52,8 @@ tab_agg_n_pip = aggregation_netpipeline (
     calculate_cpx = TRUE,
     output_dir = getwd())
 ~~~
+
+### Mainly use functions:
 
 
 
@@ -98,7 +113,7 @@ tab_agg_n_pip = aggregation_netpipeline (
 # bipartite_netpipeline
 
 ~~~R
-tab_n_pip = bipartite_netpipeline (
+single_sample_network = bipartite_netpipeline (
     table1,
     table2,
     table1name = "domain1",
@@ -126,6 +141,7 @@ tab_n_pip = bipartite_netpipeline (
     output_dir = getwd())
 ~~~
 
+### Mainly use functions:
 
 
 ### process_group_and_table function：
@@ -201,6 +217,7 @@ tab_s_pip =ssn_pipeline (
 ) 
 ~~~
 
+### Mainly use functions:
 
 
 ### process_group_and_table function：
