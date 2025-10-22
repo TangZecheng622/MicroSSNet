@@ -22,7 +22,7 @@ corMicro <- function(table1,
                      method = "spearman",
                      p.adj = "BH",
                      sel_group = "total",
-                     R = 10,
+                     R = 100,
                      ncpus = 10,
                      r.threshold = 0.3,
                      p.threshold = 0.05,
@@ -49,10 +49,15 @@ corMicro <- function(table1,
     diag(occor.P) <- 1
 
     p_values_vector <- occor.P[upper.tri(occor.P)]
-    p_adj_vector <- p.adjust(p_values_vector, method = p.adj)
-    occor.p <- occor.P  # 复制原始矩阵结构
-    occor.p[upper.tri(occor.p)] <- p_adj_vector  # 填充调整后的 p 值
-    occor.p[lower.tri(occor.p)] <- t(occor.p)[lower.tri(occor.p)]
+    if (!is.null(p.adj) && p.adj != "none"){
+      p_adj_vector <- p.adjust(p_values_vector, method = p.adj)
+      occor.p <- occor.P  # 复制原始矩阵结构
+      occor.p[upper.tri(occor.p)] <- p_adj_vector  # 填充调整后的 p 值
+      occor.p[lower.tri(occor.p)] <- t(occor.p)[lower.tri(occor.p)]
+    }else{
+      occor.p <- occor.P
+    }
+
 
     # 过滤相关性
     occor.r[abs(occor.r) < r.threshold | occor.p > p.threshold] <- 0
@@ -62,8 +67,8 @@ corMicro <- function(table1,
     cor <- occor.r
 
     if (vose == TRUE) {
-      # write.csv(occor.r, file = file.path(output_dir, paste0(sel_group, "_ori_cor_matrix.csv")))
-      # write.csv(occor.p, file = file.path(output_dir, paste0(sel_group, "_ori_pval_matrix.csv")))
+      write.csv(occor.r, file = file.path(output_dir, paste0(sel_group, "_ori_cor_matrix.csv")))
+      write.csv(occor.p, file = file.path(output_dir, paste0(sel_group, "_ori_pval_matrix.csv")))
       data.table::fwrite(cor, file = file.path(output_dir, paste0(sel_group, "_Cor_Matrix.csv")), sep = ",", quote = FALSE, row.names = TRUE)
       cor_list <- get_full_edge_list(cor)
       data.table::fwrite(cor_list, file = file.path(output_dir, paste0(sel_group, "_Cor_Edgelist.csv")), sep = ",", quote = FALSE, row.names = TRUE)
@@ -79,8 +84,8 @@ corMicro <- function(table1,
     cor <- occor.r
 
     if (vose == TRUE) {
-      # write.csv(occor.r, file = file.path(output_dir, paste0(sel_group, "_sparcc_ori_cor_matrix.csv")))
-      # write.csv(occor.p, file = file.path(output_dir, paste0(sel_group, "_sparcc_ori_pval_matrix.csv")))
+      write.csv(occor.r, file = file.path(output_dir, paste0(sel_group, "_sparcc_ori_cor_matrix.csv")))
+      write.csv(occor.p, file = file.path(output_dir, paste0(sel_group, "_sparcc_ori_pval_matrix.csv")))
       write.csv(cor, file = file.path(output_dir, paste0(sel_group, "_Sparcc_Cor_Matrix.csv")))
       cor_list <- get_full_edge_list(cor)
       data.table::fwrite(cor_list, file = file.path(output_dir, paste0(sel_group, "_Sparcc_Cor_Edgelist.csv")), sep = ",", quote = FALSE, row.names = TRUE)
@@ -116,57 +121,54 @@ corMicro <- function(table1,
 #' @return A list containing the correlation matrix and the p-value matrix.
 #' @importFrom SpiecEasi sparcc sparccboot pval.sparccboot
 #' @export
-sparcc.micro <- function(data, R = 10, ncpus = 1) {
+sparcc.micro <- function(data, R = 100, ncpus = 1,seed = 1,do_reorder = TRUE,
+                         fdr_method = "none") {
   if (!is.matrix(data)) stop("Error: 'data' must be a matrix.")
+  set.seed(seed)
+  t0 <- proc.time()
+  # spmatrix <- SpiecEasi::sparcc(data, iter = 20, inner_iter = 10, th = 0.1)
 
-  spmatrix <- SpiecEasi::sparcc(data, iter = 20, inner_iter = 10, th = 0.1)
+  bt <- SpiecEasi::sparccboot(data, R = R, ncpus = ncpus)
+  pv <- SpiecEasi::pval.sparccboot(bt, sided = "both")
+  message(sprintf("sparccboot elapsed: %.1fs", (proc.time() - t0)[["elapsed"]]))
 
-  sp.boot <- SpiecEasi::sparccboot(
-    data,
-    R = R,
-    ncpus = ncpus
-  )
+  n <- ncol(data)
+  r <- matrix(0, n, n)
+  r[upper.tri(r)] <- pv$cors
+  r <- r + t(r)
+  diag(r) <- 0
+  colnames(r) <- rownames(r) <- colnames(data)
 
-  sp.p <- SpiecEasi::pval.sparccboot(sp.boot, sided = "both")
-  cors <- sp.p$cors
-  sp.p$pvals[is.na(sp.p$pvals)] <- 1
-  pvals <- sp.p$pvals
+  p <- matrix(NA_real_, n, n)
+  p[upper.tri(p)] <- pv$pvals
+  p[lower.tri(p)] <- t(p)[lower.tri(p)]
+  diag(p) <- NA_real_
+  colnames(p) <- rownames(p) <- colnames(data)
 
-  n <- dim(spmatrix$Cor)[1]
-  sparCCpcors <- matrix(0, nrow = n, ncol = n)
-  sparCCpcors[upper.tri(sparCCpcors)] <- cors
-  sparCCpcors <- sparCCpcors + t(sparCCpcors)
 
-  sparCCpval <- matrix(1, nrow = n, ncol = n)
-  sparCCpval[upper.tri(sparCCpval)] <- pvals
-  sparCCpval <- sparCCpval + t(sparCCpval)
+  # FDR（BH）只在上三角做，再镜像
+  padj <- matrix(NA_real_, n, n)
+  ut <- upper.tri(p)
+  padj[ut] <- p.adjust(p[ut], method = fdr_method)
+  padj[lower.tri(padj)] <- t(padj)[lower.tri(padj)]
+  diag(padj) <- NA_real_
+  colnames(padj) <- rownames(padj) <- colnames(data)
 
-  rownames(sparCCpcors) <- colnames(data)
-  colnames(sparCCpcors) <- colnames(data)
-  rownames(sparCCpval) <- colnames(data)
-  colnames(sparCCpval) <- colnames(data)
+  # 可选：按相关矩阵重排（便于可视化）
+  if (isTRUE(do_reorder)) {
+    dd <- stats::as.dist((1 - r)/2)
+    hc <- stats::hclust(dd)
+    ord <- hc$order
+    r <- r[ord, ord, drop = FALSE]
+    p <- p[ord, ord, drop = FALSE]
+    padj <- padj[ord, ord, drop = FALSE]
+  }
 
-  reordered_all_sparcc <- reorder_cor_and_p(sparCCpcors, sparCCpval)
-  occor.r <- reordered_all_sparcc$r
-  occor.p <- reordered_all_sparcc$p
-
-  return(list(occor.r, occor.p))
+  # 兼容你的用法：[[1]]是相关, [[2]]是p值；也提供命名取法
+  out <- list(r, p)
+  names(out) <- c("r", "p")
+  out$padj <- padj
+  return(out)
 }
 
 
-#' Reorder Correlation and P-value Matrices
-#'
-#' This function reorders the correlation and p-value matrices based on hierarchical clustering.
-#'
-#' @param cormat Correlation matrix.
-#' @param pmat P-value matrix.
-#' @return A list containing reordered correlation and p-value matrices.
-#' @importFrom stats as.dist hclust
-#' @export
-reorder_cor_and_p <- function(cormat, pmat) {
-  dd <- as.dist((1 - cormat) / 2)
-  hc <- hclust(dd)
-  cormat <- cormat[hc$order, hc$order]
-  pmat <- pmat[hc$order, hc$order]
-  list(r = cormat, p = pmat)
-}

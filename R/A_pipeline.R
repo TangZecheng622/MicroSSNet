@@ -125,10 +125,13 @@ aggregation_netpipeline <- function(
   rrob_detail_list <- list()
 
   # Process group and table data
-  check_result <- process_group_and_table(table = table1, group_df = group_df, vscol = vscol1)
-  table1 <- check_result$table
-  group_df <- check_result$group_df
-  group_list <- check_result$group_list
+  message("🔍 Checking and matching data...")
+
+  checked_result <- process_group_and_table(table = table1, group_df = group_df, vscol = vscol1)
+  table1 <- checked_result$table
+  group_df <- checked_result$group_df
+  group_list <- checked_result$group_list
+
 
   for (sel_group in group_list) {
     # sel_group <- group_list[[1]]
@@ -147,10 +150,18 @@ aggregation_netpipeline <- function(
 
     # Calculate correlation matrix
     if (!is.null(cor_table_list) && !is.null(cor_table_list[[sel_group]])) {
-      cor <- cor_table_list[[sel_group]]
+
+
+      cor <- tryCatch({as.matrix(cor_table_list[[sel_group]])}, error = function(e) {
+        warning("Correlation reading failed for group: ", sel_group)
+        return(NULL)
+      })
 
     } else {
-      cor_result <- corMicro(
+      message("Running correlation analysis with method: ", method)
+
+      cor_result <- tryCatch({
+        corMicro(
         table1 = sel_species_df,
         r.threshold = r.threshold,
         p.threshold = p.threshold,
@@ -160,18 +171,24 @@ aggregation_netpipeline <- function(
         p.adj = p.adj,
         sel_group = sel_group,
         output_dir = group_output_dir
-      )
+      )}, error = function(e) {
+        warning("Correlation computation failed for group: ", sel_group)
+        return(NULL)
+      })
       cor <- cor_result[[1]]
     }
 
     # Construct network graph
+    message("Constructing network graph for group: ", sel_group)
     g <- igraph::graph_from_adjacency_matrix(as.matrix(cor), weighted = TRUE, mode = 'undirected', diag = FALSE)
     igraph::E(g)$correlation <- igraph::E(g)$weight
-    igraph::E(g)$weight <- abs(igraph::E(g)$weight)
-
     # Save network graph
     igraph::write_graph(g, file.path(group_output_dir, paste0(sel_group, '.Net.graphml')), format = 'graphml')
     igraph::write_graph(g, file.path(group_output_dir, paste0(sel_group, '.Net.gml')), format = 'gml')
+
+    igraph::E(g)$weight <- abs(igraph::E(g)$weight)
+
+
 
     # Calculate network properties
     zipi_output_dir <- file.path(group_output_dir,"ZiPi")
@@ -197,10 +214,10 @@ aggregation_netpipeline <- function(
     if (compare_net) {
       compare_rmc <- grobal_pro_compare(graph = g, step = step, netName = sel_group, ncpus = ncpus)
       compare_table <- compare_rmc[[1]]
-      compare_p <- compare_rmc[[2]]
+      compare_pic <- compare_rmc[[2]]
       write.csv(compare_table, file.path(group_output_dir, paste0(sel_group, "_Compare_RMC.csv")), row.names = TRUE)
       ggplot2::ggsave(filename = file.path(group_output_dir, paste0(sel_group, "_Degree_Distribution.pdf")),
-                      plot = compare_p, width = 10, height = 6, dpi = 300)
+                      plot = compare_pic, width = 10, height = 6, dpi = 300)
     }
 
     # Robustness analysis

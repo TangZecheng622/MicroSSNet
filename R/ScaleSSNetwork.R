@@ -10,7 +10,7 @@
 #' @return Data frame. Scaled network with weights normalized to the range.
 #' @importFrom data.table fwrite
 #' @export
-scale_network <- function(network, offset = FALSE, vose = FALSE, group = "Total") {
+scale_network <- function(network, offset = FALSE, vose = FALSE, ssn_model = ssn_model,ssn_dir = ssn_dir) {
   # Load required package
   if (!requireNamespace("data.table", quietly = TRUE)) {
     stop("Package 'data.table' is required but not installed.")
@@ -40,7 +40,7 @@ scale_network <- function(network, offset = FALSE, vose = FALSE, group = "Total"
 
   # Optionally save the scaled network to a file
   if (vose) {
-    file_name <- paste0("./SSN/ssPCC/Scaled_", group, "_-1_1scaled.tsv")
+    file_name <- paste0(ssn_dir, ssn_model, "_Edge_scaled.tsv")
     dir_path <- dirname(file_name)
     if (!dir.exists(dir_path)) {
       dir.create(dir_path, recursive = TRUE)

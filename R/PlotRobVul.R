@@ -34,8 +34,8 @@ compare_rob_vul <- function(rrob_sum_list, rrob_detail_list, group_list, sel_gro
   }
 
   rrob_detail$group <- factor(rrob_detail$group, levels = group_list)
-  write.csv(x = rrob_detail,file = paste0(sel_group,"_Random_Removal_Detail.csv"))
-  write.csv(x = rrob_sum,file = paste0(sel_group,"_Random_Removal_Summary.csv"))
+  write.csv(x = rrob_detail,file = file.path(output_dir,paste0(sel_group,"_Random_Removal_Detail.csv")))
+  write.csv(x = rrob_sum,file = file.path(output_dir, paste0(sel_group,"_Random_Removal_Summary.csv")))
   # Plot robustness summary
   p_rrob_sum <- plot_robustness_summary(rrob_sum)
   ggplot2::ggsave(filename = file.path(output_dir, paste0(sel_group, "_random_removal_Mean_SD.pdf")),

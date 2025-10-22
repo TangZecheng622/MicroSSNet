@@ -68,7 +68,7 @@ node_properties2<-function(igraph,clu_method="cluster_walktrap" ,zipi = FALSE,RM
   igraph.average.degree <- mean(igraph.degree)
 
   ##Average Shortest Path Length平均最短路径长度
-  igraph.average.path <- igraph::average.path.length(igraph)
+  igraph.average.path <- igraph::average.path.length(igraph,weights = NULL)
 
   ##Diameter直径
   igraph.diameter <- igraph::diameter(igraph,directed = FALSE, unconnected = TRUE, weights = NULL)

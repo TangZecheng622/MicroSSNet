@@ -41,7 +41,7 @@ make_one_edgelist_file_general <- function(
   # Initialize data frame for consolidated results
   n_edges <- n_genes * (n_genes - 1) / 2  # Number of unique edges without self-loops
   table_total <- data.frame(matrix(NA_real_, ncol = length(file_list) + 2, nrow = n_edges))
-  col_names <- c("reg", "tar")
+  col_names <- c("node1", "node2")
 
   # Process each file and consolidate into table_total
   for (i in seq_along(file_list)) {
@@ -71,12 +71,12 @@ make_one_edgelist_file_general <- function(
     table_total[, match(sample, col_names)] <- table_sample[, col_n]
 
     # Remove the processed file
-    file.remove(file_path)
+    # file.remove(file_path)
   }
 
   # Set final column names and save consolidated file
   colnames(table_total) <- col_names
-  output_path <- paste0(dir, file_name, ".tsv")
+  output_path <- paste0(dir, file_name, "_Edge.tsv")
   data.table::fwrite(table_total, file = output_path, sep = "\t", buffMB = 80)
 
   return(table_total)

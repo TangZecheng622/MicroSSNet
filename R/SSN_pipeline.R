@@ -10,9 +10,9 @@
 #' @param control Character string specifying the control group.
 #'        Can take one of the following values:
 #'        - "all" : Use all samples for network construction (no control group).
-#'        - "pergroup" : Perform single-sample PCC for each group separately.
 #'        - A specific group name (e.g., "control", "CK") : Specify a group name within `group_df` to use as the control group for network construction.
-#'        Default is "control".#' @param top Numeric value specifying the number of top edges to select. If `top > 0`, selects top `top` edges based on weight. Default is 0 (no filtering).
+#'        Default is "control".
+#' @param top Numeric value specifying the number of top edges to select. If `top > 0`, selects top `top` edges based on weight. Default is 0 (no filtering).
 #' @param pvl_threshold Numeric value between 0 and 1 for prevalence threshold in filtering species. Default is 0.5.
 #' @param dis_method Methods for calculating distance."manhattan", "euclidean", "canberra", "clark", "bray", "kulczynski", "jaccard", "gower", "altGower", "morisita", "horn", "mountford", "raup", "binomial", "chao", "cao", "mahalanobis", "chisq", "chord", "hellinger", "aitchison", or "robust.aitchison".
 #' @param r_threshold Numeric value for the correlation coefficient threshold. Edges with absolute correlation below this value will be removed. Default is 0.3.
@@ -74,7 +74,7 @@ ssn_pipeline <- function(
     vscol1,
     vscol2 = vscol1,
     ssn_method = "ssPCC",
-    control = "pergroup",
+    control = "all",
     log = TRUE,
     top = NULL,
     pvl_threshold = 0.5,
@@ -84,6 +84,7 @@ ssn_pipeline <- function(
     pca = TRUE,
     pcoa = TRUE,
     dis_method = "euclidean",
+    binary = FALSE,
     showType = NULL,
     limma = TRUE,
     property = TRUE
@@ -94,7 +95,7 @@ ssn_pipeline <- function(
   if (!is.null(group_df) && !is.data.frame(group_df)) stop("Error: 'group_df' must be a data frame or NULL.")
   if (!is.character(vscol1)) stop("Error: 'vscol1' must be a character string.")
   if (!is.character(vscol2)) stop("Error: 'vscol2' must be a character string.")
-  if (!ssn_method %in% c("ssPCC", "Lioness")) stop("Error: 'ssn_method' must be either 'ssPCC' or 'Lioness'.")
+  if (!ssn_method %in% c("ssPCC", "LIONESS-D","LIONESS-S")) stop("Error: 'ssn_method' must be in 'ssPCC','LIONESS-S','LIONESS-D'.")
   valid_values <- unique(c("all", "pergroup", group_df[[vscol1]], group_df[[vscol2]]))
   if (!is.character(control) || !(control %in% valid_values)) {
     stop("Error: 'control' must be one of the following: 'all', 'pergroup', or a value present in group_df's vscol1 or vscol2 columns.")
@@ -118,16 +119,21 @@ ssn_pipeline <- function(
   group_list2 <- unique(group_df[[vscol2]])
   table_i_list <- list()
   for (i in group_list) {
+
     i <- as.character(i)
     # i = group_list[[1]]
 
     # 根据group_df过滤table1中的列
-    selected_table <- table1[, group_df[,1][group_df[[vscol1]] == i], drop = FALSE]
+    # selected_table <- table1[, group_df[,1][group_df[[vscol1]] == i], drop = FALSE]
+    selected_names <- group_df[[1]][ group_df[[vscol1]] == i ]
+    selected_table <- table1[, selected_names, drop = FALSE]
 
     for (j in group_list2) {
       # j <- group_list2[[2]]
       j <- as.character(j)
-      cols_to_select <- group_df[, 1][group_df[[vscol2]] == j]
+      cols_to_select <- group_df[[1]][group_df[[vscol2]] == j]
+
+
       valid_cols <- cols_to_select[cols_to_select %in% colnames(selected_table)]
       if(length(valid_cols) == 0){
         next
@@ -159,31 +165,51 @@ ssn_pipeline <- function(
 
     if (control == "all") {
       sspcc_cal(sel_otu_table = table1)
-    }else if (control == "pergroup"){
-      sspcc_cal3(sel_otu_table = table1,group_df,group = vscol1)
+      ssn_model <- "SSN-all"
+    # }else if (control == "pergroup"){
+    #   sspcc_cal3(sel_otu_table = table1,group_df,group = vscol1)
     }else{
       sspcc_cal2(sel_otu_table = table1, group_df = group_df, ck = control, group = vscol1)
       group_df[[vscol2]] <- as.character(group_df[[vscol2]])  # 转为字符
       group_df[[vscol2]][group_df[[vscol1]] == control] <- "control"
       group_df[[vscol2]] <- as.factor(group_df[[vscol2]])  # 转回因子
+      ssn_model <- paste0("SSN-",control)
       print("###Merging Tablesw###")
 
     }
     n_genes <- nrow(table1)
+    ssn_dir <- "./SSN/ssPCC/"
     cor <- make_one_edgelist_file_general(
-      dir = "./SSN/ssPCC/",
-      pattern = "ssPCC.*\\.tsv",
-      file_name = "SSN-Total",
-      col_n = 4,
+      dir = ssn_dir,
+      pattern = "ssPCC_(.*)\\.tsv",
+      file_name = ssn_model,
+      col_n = 5,
       p_values = TRUE,
-      col_p_n = 3,
+      col_p_n = 8,
       n_genes = n_genes
     )
     print("###Finished Merge Tablesw###")
-  }
+  }else if(ssn_method == "LIONESS-S") {
 
-  if (ssn_method == "Lioness") {
     cor <- lionessR::lioness(table1)
+    ssn_dir <- "./SSN/LIONESS-S/"
+    ssn_model <- "LIONESS-S"
+    ssn_output <- paste0(ssn_dir, ssn_model, "_Edge.tsv")
+    if (!dir.exists(ssn_dir)) dir.create(ssn_dir, recursive = TRUE)
+    data.table::fwrite(cor, file = ssn_output, sep = "\t", buffMB = 80)
+
+  }else if(ssn_method == "LIONESS-D"){
+
+    cor <- lioness_D(sel_otu_table = table1,group_df=group_df, vscol1 = vscol1,vscol2=vscol2)
+    ssn_dir <- "./SSN/LIONESS-D/"
+    ssn_model <- "LIONESS-D"
+    ssn_output <- paste0(ssn_dir, ssn_model, "_Edge.tsv")
+    data.table::fwrite(cor, file = ssn_output, sep = "\t", buffMB = 80)
+
+  }else{
+
+    stop("ssn_method must be in (ssPCC,LIONESS-S,LIONESS-D)")
+
   }
 
   cor[is.na(cor)] <- 0
@@ -191,7 +217,7 @@ ssn_pipeline <- function(
 
   # Scale network weights
   if (scale) {
-    cor <- scale_network(network = cor, vose = save)
+    cor <- scale_network(network = cor, vose = save,ssn_model = ssn_model,ssn_dir = ssn_dir)
   }
 
   # Apply correlation threshold
@@ -202,24 +228,24 @@ ssn_pipeline <- function(
 
   # Filter top edges
   if (top > 0 && !is.null(top)) {
-    cor_top <- select_top_edges(n = top, table = cor, group = "TotalSSN", remove_zero_rows = TRUE, vose = save)
+    cor_top <- select_top_edges(n = top, table = cor, ssn_model = ssn_model,ssn_dir = ssn_dir, remove_zero_rows = TRUE, vose = save)
   } else {
     cor_top <- cor[rowSums(abs(cor[, -c(1, 2)])) > 0, ]
   }
 
   # Calculate Sum of Weights (SOW) for nodes
   SOW <- Calculate_sum_of_weights(network = cor_top)
-  sow_name <- paste0("./SSN/ssPCC/SOW.tsv")
-  data.table::fwrite(SOW, file = sow_name, sep = "\t", quote = FALSE, row.names = TRUE)
+  ssn_output <- paste0(ssn_dir, ssn_model, "_SOW.tsv")
+  data.table::fwrite(SOW, file = ssn_output, sep = "\t", quote = FALSE, row.names = TRUE)
   # PCA and PCoA analysis
 
   if(pca == TRUE){
     PCA_draw(SOW, group_df, vscol2, save = save, showType = showType, mode = "PCA", offset = FALSE)
-    PCA_draw(cor_top, group_df, vscol2, save = save, showType = showType, mode = "PCA", offset = TRUE)
+    PCA_draw(cor_top, group_df, vscol2, save = save, showType = showType, mode = "PCA", offset = TRUE,binary = binary)
   }
   if(pcoa == TRUE){
     PCA_draw(SOW, group_df, vscol2, save = save, showType = showType, mode = "PCOA", offset = FALSE,method = dis_method)
-    PCA_draw(cor_top, group_df, vscol2, save = save, showType = showType, mode = "PCOA", offset = TRUE,method = dis_method)
+    PCA_draw(cor_top, group_df, vscol2, save = save, showType = showType, mode = "PCOA", offset = TRUE,method = dis_method,binary = binary)
   }
 
 

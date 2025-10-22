@@ -45,13 +45,12 @@ plotnetwork <- function(g, clu_method = "cluster_fast_greedy", tag = "network", 
                        modu_cols[as.character(igraph::V(g)$membership)],
                        col_g)
   igraph::V(g)$frame.color <- igraph::V(g)$color
-
+  node_sizes <- rowMeans(df[igraph::V(g)$name, , drop = FALSE], na.rm = TRUE)
   # Assign sizes to nodes
-  if (!is.null(df)) {
-    node_sizes <- rowMeans(df[igraph::V(g)$name, , drop = FALSE], na.rm = TRUE)
+  if (!any(node_sizes< 0) ) {
     igraph::V(g)$size <- scales::rescale(log1p(node_sizes), to = c(0.5, 2))  # 标准化至 1-5 之间
   } else {
-    igraph::V(g)$size <- 5
+    igraph::V(g)$size <- scales::rescale(log1p(exp(node_sizes)), to = c(0.5, 2))  # 标准化至 1-5 之间
   }
 
   # Assign colors to edges

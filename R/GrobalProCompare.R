@@ -56,16 +56,16 @@ grobal_pro_compare <- function(graph, type = "gnm", step = 100, netName = sel_gr
 
   # 网络类型推断
   fitinf <- fit_poweRlaw(graph)
-  if(is.na(fitinf[[1]])) {
-
-    message("\nFitting failed: Unable to determine network type due to fitting issues.\n")
-  } else if (fitinf[[1]] <= 0.05) {
-    message("\nThis network may be a Scale-free network!\n")
-  } else if (sum_net[3, netName] > sum_net[3, "Means"]) {
-    message("\nThis network may be a Small-World network!\n")
-  } else {
-    message("\nThis network may be a random network or some other type of network!\n")
-  }
+  # if(is.na(fitinf[[1]])) {
+  #
+  #   message("\nFitting failed: Unable to determine network type due to fitting issues.\n")
+  # } else if (fitinf[[1]] <= 0.05) {
+  #   message("\nThis network may be a Scale-free network!\n")
+  # } else if (sum_net[3, netName] > sum_net[3, "Means"]) {
+  #   message("\nThis network may be a Small-World network!\n")
+  # } else {
+  #   message("\nThis network may be a random network or some other type of network!\n")
+  # }
 
   return(list(sum_net, fitinf[[2]]))
 }
@@ -93,60 +93,153 @@ generate_random_network <- function(graph, type = "gnm") {
 #' @importFrom igraph degree
 #' @importFrom stats lm coef nls fitted
 #' @importFrom ggplot2 ggplot aes geom_point stat_smooth labs theme_minimal annotate
+# fit_poweRlaw <- function(graph) {
+#   degree_dist <- table(igraph::degree(graph))
+#   degree_num <- as.numeric(names(degree_dist))
+#   degree_count <- as.numeric(degree_dist)
+#   dat <- data.frame(degree = degree_num, count = degree_count)
+#   dat <- dat[dat$degree > 0 & dat$count > 0, ]
+#
+#   # 拟合幂律分布
+#   log_degree <- log(dat$degree)
+#   log_count <- log(dat$count)
+#   linear_model <- lm(log_count ~ log_degree)
+#   coefficients <- coef(linear_model)
+#   initial_a <- exp(coefficients[1])
+#   initial_b <- coefficients[2]
+#
+#   # 非线性拟合
+#   mod <- tryCatch({
+#     nls(count ~ a * degree^b, data = dat, start = list(a = initial_a, b = initial_b), control = list(maxiter = 1000))
+#   }, error = function(e) {
+#     message("Nonlinear fitting failed: ", e$message)
+#     NULL  # 返回 NULL 以便在上层逻辑中处理拟合失败的情况
+#   })
+#
+#   if (is.null(mod)) return(list(p_value = NA, plot = NULL))
+#
+#   a <- coef(mod)[1]
+#   b <- coef(mod)[2]
+#
+#   # 计算 R^2 和 p 值
+#   fit <- fitted(mod)
+#   SSre <- sum((dat$count - fit)^2)
+#   SStot <- sum((dat$count - mean(dat$count))^2)
+#   R2 <- 1 - SSre / SStot
+#
+#   # 计算 p 值
+#   p_num <- 1
+#   for (i in 1:999) {
+#     dat_rand <- dat
+#     dat_rand$count <- sample(dat_rand$count)
+#     SSre_rand <- sum((dat_rand$count - fit)^2)
+#     SStot_rand <- sum((dat_rand$count - mean(dat_rand$count))^2)
+#     R2_rand <- 1 - SSre_rand / SStot_rand
+#     if (R2_rand > R2) p_num <- p_num + 1
+#   }
+#   p_value <- p_num / 1000
+#
+#   # 绘制拟合曲线
+#   p <- ggplot2::ggplot(dat, ggplot2::aes(x = degree, y = count)) +
+#     ggplot2::geom_point(color = 'blue') +
+#     ggplot2::stat_smooth(method = 'nls', formula = y ~ a * x^b, method.args = list(start = list(a = a, b = b)), se = FALSE) +
+#     ggplot2::labs(x = 'Degree', y = 'Count') +
+#     ggplot2::theme_minimal() +
+#     ggplot2::annotate("text", x = max(dat$degree) * 0.8, y = max(dat$count) * 0.9,
+#              label = paste("R^2 =", round(R2, 3), "\nP =", round(p_value, 3)))
+#
+#   return(list(p_value, p))
+# }
 fit_poweRlaw <- function(graph) {
-  degree_dist <- table(igraph::degree(graph))
-  degree_num <- as.numeric(names(degree_dist))
-  degree_count <- as.numeric(degree_dist)
+  degree_vec <- igraph::degree(graph)
+  degree_tab <- table(degree_vec)
+  degree_num <- as.numeric(names(degree_tab))
+  degree_count <- as.numeric(degree_tab)
   dat <- data.frame(degree = degree_num, count = degree_count)
   dat <- dat[dat$degree > 0 & dat$count > 0, ]
 
-  # 拟合幂律分布
+  # 🧱 基本检查：不能拟合就提前退出
+  if (nrow(dat) < 3 || length(unique(dat$degree)) < 2) {
+    message("⚠️ Degree distribution too sparse or too uniform to fit power law.")
+    return(list(p_value = NA, plot = NULL))
+  }
+
+  # log 转换（小心 NaN）
   log_degree <- log(dat$degree)
   log_count <- log(dat$count)
-  linear_model <- lm(log_count ~ log_degree)
+
+  # 🚧 tryCatch for linear fit
+  linear_model <- tryCatch({
+    lm(log_count ~ log_degree)
+  }, error = function(e) {
+    message("❌ Linear fit failed: ", e$message)
+    return(NULL)
+  })
+
+  if (is.null(linear_model)) {
+    return(list(p_value = NA, plot = NULL))
+  }
+
   coefficients <- coef(linear_model)
+  if (any(is.na(coefficients))) {
+    message("⚠️ Linear model coefficients invalid.")
+    return(list(p_value = NA, plot = NULL))
+  }
+
   initial_a <- exp(coefficients[1])
   initial_b <- coefficients[2]
 
-  # 非线性拟合
+  # 🚧 非线性拟合 with tryCatch
   mod <- tryCatch({
-    nls(count ~ a * degree^b, data = dat, start = list(a = initial_a, b = initial_b), control = list(maxiter = 1000))
+    nls(count ~ a * degree^b,
+        data = dat,
+        start = list(a = initial_a, b = initial_b),
+        control = list(maxiter = 1000))
   }, error = function(e) {
-    message("Nonlinear fitting failed: ", e$message)
-    NULL  # 返回 NULL 以便在上层逻辑中处理拟合失败的情况
+    message("❌ Nonlinear fit failed: ", e$message)
+    return(NULL)
   })
 
-  if (is.null(mod)) return(list(p_value = NA, plot = NULL))
+  if (is.null(mod)) {
+    return(list(p_value = NA, plot = NULL))
+  }
 
-  a <- coef(mod)[1]
-  b <- coef(mod)[2]
-
-  # 计算 R^2 和 p 值
-  fit <- fitted(mod)
-  SSre <- sum((dat$count - fit)^2)
+  # 计算 R²
+  fit_vals <- fitted(mod)
+  SSre <- sum((dat$count - fit_vals)^2)
   SStot <- sum((dat$count - mean(dat$count))^2)
   R2 <- 1 - SSre / SStot
 
-  # 计算 p 值
+  # bootstrap p 值
   p_num <- 1
   for (i in 1:999) {
     dat_rand <- dat
     dat_rand$count <- sample(dat_rand$count)
-    SSre_rand <- sum((dat_rand$count - fit)^2)
-    SStot_rand <- sum((dat_rand$count - mean(dat_rand$count))^2)
+    SSre_rand <- sum((dat_rand$count - fit_vals)^2)
+    SStot_rand <- sum((dat_rand$count - mean(dat$count))^2)
     R2_rand <- 1 - SSre_rand / SStot_rand
     if (R2_rand > R2) p_num <- p_num + 1
   }
   p_value <- p_num / 1000
 
-  # 绘制拟合曲线
-  p <- ggplot2::ggplot(dat, ggplot2::aes(x = degree, y = count)) +
-    ggplot2::geom_point(color = 'blue') +
-    ggplot2::stat_smooth(method = 'nls', formula = y ~ a * x^b, method.args = list(start = list(a = a, b = b)), se = FALSE) +
-    ggplot2::labs(x = 'Degree', y = 'Count') +
-    ggplot2::theme_minimal() +
-    ggplot2::annotate("text", x = max(dat$degree) * 0.8, y = max(dat$count) * 0.9,
-             label = paste("R^2 =", round(R2, 3), "\nP =", round(p_value, 3)))
+  # 🖼️ 绘图：也加 tryCatch 防止 crash
+  plot_obj <- tryCatch({
+    ggplot2::ggplot(dat, ggplot2::aes(x = degree, y = count)) +
+      ggplot2::geom_point(color = 'blue') +
+      ggplot2::stat_smooth(method = 'nls',
+                           formula = y ~ a * x^b,
+                           method.args = list(start = list(a = initial_a, b = initial_b)),
+                           se = FALSE) +
+      ggplot2::labs(x = 'Degree', y = 'Count') +
+      ggplot2::theme_minimal() +
+      ggplot2::annotate("text", x = max(dat$degree) * 0.8, y = max(dat$count) * 0.9,
+                        label = paste("R² =", round(R2, 3), "\nP =", round(p_value, 3)))
+  }, error = function(e) {
+    message("⚠️ Plot generation failed: ", e$message)
+    NULL
+  })
 
-  return(list(p_value, p))
+  return(list(p_value = p_value, plot = plot_obj))
 }
+
+

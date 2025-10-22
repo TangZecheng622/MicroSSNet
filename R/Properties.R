@@ -14,7 +14,8 @@
 #' @importFrom stats na.omit
 #' @importFrom utils head
 #' @export
-node_properties <- function(graph, clu_method = "cluster_walktrap", zipi = FALSE, RM = TRUE, tag = "NA", output = "./zipi/") {
+node_properties <- function(graph, clu_method = "cluster_walktrap", zipi = FALSE, RM = TRUE, tag = "NA", output = "./zipi/",
+                            remove_isolated = TRUE) {
   if (!inherits(graph, "igraph")) stop("Error: 'graph' must be an 'igraph' object.")
   if (!is.character(clu_method)) stop("Error: 'clu_method' must be a character string.")
   if (!is.logical(zipi)) stop("Error: 'zipi' must be a logical value.")
@@ -24,9 +25,15 @@ node_properties <- function(graph, clu_method = "cluster_walktrap", zipi = FALSE
   # Remove vertices with zero degree
   graph <- igraph::delete_vertices(graph, which(igraph::degree(graph) == 0))
 
+
+  #Make sure the node has a name attribute
+  if (is.null(igraph::V(graph)$name)) {
+    igraph::V(graph)$name <- as.character(seq_along(igraph::V(graph)))
+  }
   # Local indicators
   graph.degree <- igraph::degree(graph)
   graph.locclu.coeff <- igraph::transitivity(graph, type = "local")
+  graph.locclu.coeff[is.na(graph.locclu.coeff)] <- 0
   graph.bc <- igraph::betweenness(graph)
   graph.cc <- igraph::closeness(graph)
   graph.ec <- igraph::eigen_centrality(graph)$vector
@@ -40,7 +47,7 @@ node_properties <- function(graph, clu_method = "cluster_walktrap", zipi = FALSE
   connectance <- igraph::edge_density(graph, loops = FALSE)
   edge.connectivity <- igraph::edge_connectivity(graph)
   graph.average.degree <- mean(graph.degree)
-  graph.average.path <- igraph::average.path.length(graph)
+  graph.average.path <- igraph::average.path.length(graph,weights = NULL)
   graph.diameter <- igraph::diameter(graph, directed = FALSE, unconnected = TRUE, weights = NULL)
   graph.cen.degree <- igraph::centr_degree(graph)$centralization
   graph.cen.bet <- igraph::centr_betw(graph)$centralization
@@ -66,6 +73,7 @@ node_properties <- function(graph, clu_method = "cluster_walktrap", zipi = FALSE
 
   # Summarize indicators
   graph.local.indicators <- data.frame(
+    name = igraph::V(graph)$name,
     Degree = graph.degree,
     Local_Clustering_Coefficient = graph.locclu.coeff,
     Betweenness_Centrality = graph.bc,
@@ -97,7 +105,8 @@ node_properties <- function(graph, clu_method = "cluster_walktrap", zipi = FALSE
   # Calculate ZiPi if required
   if (zipi == TRUE) {
     zipi_m <- ZiPiplot(graph, clu_method = clu_method, tag = tag, output_dir = output)
-    graph.local.indicators <- cbind(graph.local.indicators, zipi_m)
+    graph.local.indicators <- dplyr::left_join(graph.local.indicators,zipi_m,by = "name")
+
     graph.local.indicators <- dplyr::select(graph.local.indicators, name, everything())
   }
 

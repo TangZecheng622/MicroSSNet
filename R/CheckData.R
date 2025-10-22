@@ -18,20 +18,20 @@ process_group_and_table <- function(table, group_df = NULL, vscol) {
   # Check if group_df is provided
   if (!is.null(group_df)) {
     # Detect column names in group_df
-    strings <- colnames(group_df)
-    sample_match <- grepl("sample", strings, ignore.case = TRUE)
-    group_match <- grepl(paste0("^", vscol, "$"), strings, ignore.case = TRUE)
+    group_df_colnames <- colnames(group_df)
+    sample_match <- grepl("sample", group_df_colnames, ignore.case = TRUE)
+    group_match <- grepl(paste0("^", vscol, "$"), group_df_colnames, ignore.case = TRUE)
 
     # Check for 'sample' column
     if (any(sample_match)) {
-      sample_col <- strings[sample_match][1]  # First matching column as sample column
+      sample_col <- group_df_colnames[sample_match][1]  # First matching column as sample column
     } else {
       stop("Error: 'sample' column not found in group_df")
     }
 
     # Check for 'group' column matching vscol
     if (any(group_match)) {
-      group_col <- strings[group_match][1]  # First matching column as group column
+      group_col <- group_df_colnames[group_match][1]  # First matching column as group column
     } else {
       stop(paste("Error:", vscol, "column not found in group_df"))
     }
@@ -69,5 +69,8 @@ process_group_and_table <- function(table, group_df = NULL, vscol) {
   }
 
   # Return modified table, group_df, and group_list as a list
-  list(table = table, group_df = group_df, group_list = group_list)
+  return(list(table = table, group_df = group_df, group_list = group_list))
+  message("✅ Number of samples matched: ", length(unique(group_df$sample)))
+  message("✅ Number of groups detected: ", length(group_list))
+
 }

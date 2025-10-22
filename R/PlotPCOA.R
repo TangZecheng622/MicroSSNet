@@ -10,6 +10,7 @@
 #' @param mode Character. Analysis mode: `"PCA"` or `"PCOA"`. Default is `"PCOA"`.
 #' @param offset Logical. If TRUE, combines two columns into "edges" in the input table. Default is FALSE.
 #' @param method Methods for calculating distance."manhattan", "euclidean", "canberra", "clark", "bray", "kulczynski", "jaccard", "gower", "altGower", "morisita", "horn", "mountford", "raup", "binomial", "chao", "cao", "mahalanobis", "chisq", "chord", "hellinger", "aitchison", or "robust.aitchison".
+#' @param method Whether PCOA calculation is in binary
 #' @importFrom vegan adonis2 vegdist
 #' @importFrom ggplot2 ggplot aes geom_point geom_segment geom_label labs theme_bw theme element_text stat_ellipse
 #' @importFrom dplyr summarise group_by left_join
@@ -21,7 +22,7 @@
 #' @importFrom magrittr %>%
 #' @export
 #'
-PCA_draw <- function(table, group_df, vscol, save = TRUE, showType = NULL, mode = "PCOA", offset = FALSE,method = "euclidean") {
+PCA_draw <- function(table, group_df, vscol, save = TRUE, showType = NULL, mode = "PCOA", offset = FALSE,method = "euclidean",binary = FALSE) {
   # Load required packages
   required_packages <- c("vegan", "ggplot2", "dplyr", "ggsci", "tidyr")
   lapply(required_packages, function(pkg) {
@@ -135,6 +136,9 @@ PCA_draw <- function(table, group_df, vscol, save = TRUE, showType = NULL, mode 
       print(plot_pca)
     }
   } else if (mode == "PCOA") {
+    if (binary){
+      df_t <- (df_t != 0) * 1
+    }
     dist_matrix <- vegan::vegdist(df_t,method = method)
     # dist_matrix <- vegan::vegdist(df_t,method = "bray")
     # dist_matrix <- dist(df_t)

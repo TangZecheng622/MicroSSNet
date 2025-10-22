@@ -12,7 +12,7 @@
 #' @return Data frame. Network with only the top `n` edges retained for each sample.
 #' @importFrom data.table fwrite
 #' @export
-select_top_edges <- function(n, table, group = "Total", remove_zero_rows = FALSE, offset = FALSE, vose = TRUE) {
+select_top_edges <- function(n, table, ssn_model = ssn_model,ssn_dir = ssn_dir, remove_zero_rows = FALSE, offset = FALSE, vose = TRUE) {
   # Load required package
   if (!requireNamespace("data.table", quietly = TRUE)) {
     stop("Package 'data.table' is required but not installed.")
@@ -37,7 +37,7 @@ select_top_edges <- function(n, table, group = "Total", remove_zero_rows = FALSE
 
   # Optionally save the filtered network to a file
   if (vose) {
-    file_name <- paste0("ssn/", group, "_top_", n, "_edges.tsv")
+    file_name <- paste0(ssn_dir, ssn_model, "_top_", n, "_edges.tsv")
     dir_path <- dirname(file_name)
     if (!dir.exists(dir_path)) {
       dir.create(dir_path, recursive = TRUE)
