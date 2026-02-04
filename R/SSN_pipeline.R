@@ -19,12 +19,19 @@
 #' @param log Logical value indicating whether to table1 to the log(table1 + 10e-16) . Default is TRUE.
 #' @param scale Logical value indicating whether to scale network weights to the range . Default is TRUE.
 #' @param save Logical value indicating whether to save the outputs to files. Default is TRUE.
+#' @param table1 Either (1) a data.frame abundance table (rows = taxa, columns = samples),
+#'   or (2) a phyloseq object containing an OTU/ASV table (otu_table) and optional sample metadata (sample_data).
+#'   When a phyloseq object is provided, MicroSSNet will extract the abundance table and (if available) group_df
+#'   from sample_data, ensuring taxa are rows and samples are columns.
+#' @param phyloseq_tax_rank Optional. If provided (e.g., "Genus" or "Species"), taxa will be agglomerated via
+#'   phyloseq::tax_glom() prior to network construction.
+#' @param phyloseq_transform One of "none" or "relative". If "relative", column-wise relative abundance will be computed
+#'   after extraction from the phyloseq object.
 #' @return The function outputs various files and plots in the `./ssn/` directory.
 #' @importFrom dplyr full_join
 #' @importFrom purrr map reduce
 #' @importFrom tibble rownames_to_column column_to_rownames
 #' @importFrom stats cor
-#' @importFrom methods is
 #' @export
 #'
 #' @examples
@@ -78,6 +85,7 @@ ssn_pipeline <- function(
     log = TRUE,
     top = NULL,
     pvl_threshold = 0.5,
+    r_bg_abs_min = 0.6,
     r_threshold = 0,
     scale = TRUE,
     save = TRUE,
@@ -87,19 +95,19 @@ ssn_pipeline <- function(
     binary = FALSE,
     showType = NULL,
     limma = TRUE,
-    property = TRUE
+    property = TRUE,
+    phyloseq_tax_rank = NULL,
+    phyloseq_transform = c("none", "relative")
 ) {
 
   # Parameter validation
-  if (!is.data.frame(table1)) stop("Error: 'table1' must be a data frame.")
+  if (!(is.data.frame(table1) || methods::is(table1, "phyloseq"))) {
+    stop("Error: 'table1' must be a data.frame abundance table or a phyloseq object.")
+  }
   if (!is.null(group_df) && !is.data.frame(group_df)) stop("Error: 'group_df' must be a data frame or NULL.")
   if (!is.character(vscol1)) stop("Error: 'vscol1' must be a character string.")
   if (!is.character(vscol2)) stop("Error: 'vscol2' must be a character string.")
   if (!ssn_method %in% c("ssPCC", "LIONESS-D","LIONESS-S")) stop("Error: 'ssn_method' must be in 'ssPCC','LIONESS-S','LIONESS-D'.")
-  valid_values <- unique(c("all", "pergroup", group_df[[vscol1]], group_df[[vscol2]]))
-  if (!is.character(control) || !(control %in% valid_values)) {
-    stop("Error: 'control' must be one of the following: 'all', 'pergroup', or a value present in group_df's vscol1 or vscol2 columns.")
-  }
   if (!is.null(top) && (!is.numeric(top) || top <= 0)) stop("Error: 'top' must be a positive number or NULL.")
   if (!is.numeric(pvl_threshold) || pvl_threshold < 0 || pvl_threshold > 1) stop("Error: 'pvl_threshold' must be between 0 and 1.")
   if (!is.numeric(r_threshold)) stop("Error: 'r_threshold' must be numeric.")
@@ -111,6 +119,19 @@ ssn_pipeline <- function(
   if (!is.logical(limma)) stop("Error: 'limma' must be a logical value.")
   if (!is.logical(property)) stop("Error: 'property' must be a logical value.")
 
+  coerced <- coerce_to_table_and_group(
+    table1 = table1,
+    group_df = group_df,
+    phyloseq_tax_rank = phyloseq_tax_rank,
+    phyloseq_transform = phyloseq_transform
+  )
+  table1 <- coerced$table1
+  group_df <- coerced$group_df
+
+  valid_values <- unique(c("all", "pergroup", group_df[[vscol1]], group_df[[vscol2]]))
+  if (!is.character(control) || !(control %in% valid_values)) {
+    stop("Error: 'control' must be one of the following: 'all', 'pergroup', or a value present in group_df's vscol1 or vscol2 columns.")
+  }
   # Process group and table data
   check_result <- process_group_and_table(table = table1, group_df = group_df, vscol = vscol1)
   table1 <- check_result$table
@@ -125,7 +146,7 @@ ssn_pipeline <- function(
 
     # 根据group_df过滤table1中的列
     # selected_table <- table1[, group_df[,1][group_df[[vscol1]] == i], drop = FALSE]
-    selected_names <- group_df[[1]][ group_df[[vscol1]] == i ]
+    selected_names <- group_df$sample[group_df$group == i]
     selected_table <- table1[, selected_names, drop = FALSE]
 
     for (j in group_list2) {
@@ -169,7 +190,7 @@ ssn_pipeline <- function(
     # }else if (control == "pergroup"){
     #   sspcc_cal3(sel_otu_table = table1,group_df,group = vscol1)
     }else{
-      sspcc_cal2(sel_otu_table = table1, group_df = group_df, ck = control, group = vscol1)
+      sspcc_cal2(sel_otu_table = table1, group_df = group_df, ck = control, group = vscol1, r_bg_abs_min = r_bg_abs_min)
       group_df[[vscol2]] <- as.character(group_df[[vscol2]])  # 转为字符
       group_df[[vscol2]][group_df[[vscol1]] == control] <- "control"
       group_df[[vscol2]] <- as.factor(group_df[[vscol2]])  # 转回因子
@@ -177,7 +198,7 @@ ssn_pipeline <- function(
       print("###Merging Tablesw###")
 
     }
-    n_genes <- nrow(table1)
+
     ssn_dir <- "./SSN/ssPCC/"
     cor <- make_one_edgelist_file_general(
       dir = ssn_dir,
@@ -185,8 +206,7 @@ ssn_pipeline <- function(
       file_name = ssn_model,
       col_n = 5,
       p_values = TRUE,
-      col_p_n = 8,
-      n_genes = n_genes
+      col_p_n = 8
     )
     print("###Finished Merge Tablesw###")
   }else if(ssn_method == "LIONESS-S") {
@@ -241,7 +261,7 @@ ssn_pipeline <- function(
 
   if(pca == TRUE){
     PCA_draw(SOW, group_df, vscol2, save = save, showType = showType, mode = "PCA", offset = FALSE)
-    PCA_draw(cor_top, group_df, vscol2, save = save, showType = showType, mode = "PCA", offset = TRUE,binary = binary)
+    PCA_draw(cor_top, group_df, vscol2, save = save, showType = showType, mode = "PCA", offset = TRUE, binary = binary)
   }
   if(pcoa == TRUE){
     PCA_draw(SOW, group_df, vscol2, save = save, showType = showType, mode = "PCOA", offset = FALSE,method = dis_method)
