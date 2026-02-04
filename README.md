@@ -11,7 +11,8 @@ Network analysis is a fundamental tool for elucidating microbial interactions, w
 <img width="1095" height="779" alt="image" src="https://github.com/user-attachments/assets/f6caad84-6ff7-4b61-b23d-cce7570a52a8" />
 
 ## 2.Single-sample network Visualization
-![image-20260204110402709](C:\Users\86135\AppData\Roaming\Typora\typora-user-images\image-20260204110402709.png)
+
+<img width="4762" height="6735" alt="pic2_01" src="https://github.com/user-attachments/assets/b1638b86-b708-4fac-aa34-f66c81d18d0d" />
 
 
 # Installation
@@ -404,4 +405,5 @@ Visualization option (`True` or `False`)
 ### determineCharacteristics function：
 
 **Function**: Calculate the network properties of single-sample networks.
+
 
