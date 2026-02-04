@@ -1,2 +1,0 @@
-"Name","Nodes","Edges","Average_Local_Clustering_Coefficient","Connectance","Edge_Connectivity","Average_Degree","Average_Shortest_Path_Length","Diameter","Degree_Centralization","Betweenness_Centralization","Closeness_Centralization","Eigenvector_Centralization","No_Cluster","Average_Local_Efficiency","Relative_Modularity"
-"warming",813,1522,0.256244622686895,0.0046110313319882,0,3.74415744157442,5.57485030967409,19.8804348863611,0.0298717272887015,0.112484576090328,1.28465310425035,0.950790481074696,94,0.296912085163965,0.19682556889527
