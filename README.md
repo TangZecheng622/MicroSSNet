@@ -1,19 +1,31 @@
 # MicroSSNet: An R package for microbial network construction and analysis at the single-sample and aggregated levels.
 Network analysis is a fundamental tool for elucidating microbial interactions, which are crucial for understanding the mechanisms that shape ecosystem structure and function. Traditional aggregated (co-abundance/co-occurrence) network approaches that infer pairwise relationships among biological entities from large sample collections often overlook sample-specific interaction patterns. To address this, we developed MicroSSNet, an R package designed for analyzing microbial networks at both the aggregated and single-sample levels. These results highlight the importance of sample-specific interaction patterns and demonstrate that SSN-based approaches provide complementary insights into aggregated network and abundance-based approaches. MicroSSNet offers a robust framework for constructing and analyzing single-sample microbial networks, advancing microbiome research at both the individual and community scales. The package is freely available on GitHub (https://github.com/TangZecheng622/MicroSSNet).
 
-# Examples of visualizations.
+# Brief Overview
 <img width="729" height="1050" alt="image" src="https://github.com/user-attachments/assets/eb9f4c5f-c334-4999-9b6c-3ffd07a5516e" />
 
-## 1.aggregated network
+
+
+## 1.Aggregated Network Visualization
+
 <img width="1095" height="779" alt="image" src="https://github.com/user-attachments/assets/f6caad84-6ff7-4b61-b23d-cce7570a52a8" />
 
-## 2.single-sample network
-<img width="1107" height="1036" alt="image" src="https://github.com/user-attachments/assets/166b0787-0140-4fa7-9a9f-8286de89a747" />
+## 2.Single-sample network Visualization
+![image-20260204110402709](C:\Users\86135\AppData\Roaming\Typora\typora-user-images\image-20260204110402709.png)
 
 
 # Installation
 
 ~~~
+# Requirements:
+# - R (> 4.5.0 recommended)
+# Dependencies:
+# Imports:
+#   data.table, dplyr, ggdist, ggplot2, ggpubr, ggsci, Hmisc, igraph, limma, mgm,
+#   networktools, qgraph, scales, SpiecEasi, tidyr, vegan, magrittr, methods,
+#   purrr, rlang, tibble
+# Suggests:
+#   lionessR
 install.packages("BiocManager")
 library(BiocManager)
 BiocManager::install("limma")
@@ -22,7 +34,106 @@ remotes::install_github("zdk123/SpiecEasi")
 remotes::install_github("TangZecheng622/MicroSSNet")
 ~~~
 
+## 📘 **Quick Start Tutorial**
 
+MicroSSNet provides example input files under the `examples/` directory.
+
+### **1. Load example data**
+
+```R
+library(MicroSSNet)
+
+abund <- read.csv("examples/example_input_abundance.csv", row.names = 1)
+meta  <- read.csv("examples/example_metadata.csv", row.names = 1)
+
+(optional: phyloseq)
+otu <- otu_table(as.matrix(abund), taxa_are_rows = TRUE)
+sam <- sample_data(meta)
+phyloseq_test <- phyloseq(otu, sam)
+```
+
+### **Abundance Table Format**
+
+- **Rows =  taxa**
+- **Columns = samples**
+- The first column contains OTU identifiers.
+- All other columns contain numeric abundance values.
+
+#### **Example (abundance table)**
+
+| OTU_ID | SampleA | SampleB | SampleC |
+| ------ | ------- | ------- | ------- |
+| OTU_1  | 34      | 12      | 0       |
+| OTU_2  | 5       | 18      | 3       |
+| OTU_3  | 0       | 7       | 9       |
+
+Saved as e.g. `example_input_abundance.csv`.
+
+### **Metadata Table Format**
+
+- **Column 1 = sample name (must match abundance table column names)**
+- **Column 2 = vscol1 (first grouping variable)**
+- **Column 3 = vscol2 (second grouping variable, optional)**
+
+#### Example (metadata table)
+
+| sample  | vscol1 (grouping 1) | vscol2 (grouping 2) |
+| ------- | ------------------- | ------------------- |
+| SampleA | 2009                | Warming             |
+| SampleB | 2013                | Unwarming           |
+| SampleC | 2014                | Warming             |
+
+Saved as e.g. `example_metadata.csv`.
+
+### **2. Construct a single-sample network (SSN) using ssPCC**
+
+```R
+ssn_test <- ssn_pipeline(
+  table1 = abund, #optional: phyloseq_test
+  group_df = meta, #optional: # If `table1` is a phyloseq object that already contains sample metadata, `group_df` can be NULL.
+  ssn_method = "ssPCC",
+  vscol1 = "year", 
+  # metadata column used for grouping (e.g., 2009, 2013, 2014)
+  control = "2009", 
+  # baseline group selected from the vscol1 categories (here: using the 2009 samples as baseline)
+  vscol2 = "Warm" 
+  # second metadata column used for subgroup comparison; 
+  # by default, vscol1 = vscol2, meaning comparisons are conducted within groups 
+  # (e.g., comparing warming vs. non-warming samples within each year)
+)
+```
+
+### 3.**Construct an aggregated network**
+
+```R
+agg_net——test <- aggregation_netpipeline(
+  table1 = abund,
+  group_df = meta,
+  vscol1 = "Warm",
+  method        = "spearman",
+  r.threshold   = 0.6,
+  p.threshold   = 0.05
+)
+```
+
+### 4.**Construct an bipartite(cross-domain) network**
+
+```
+agg_net <- aggregation_netpipeline(
+  table1 = abund,
+  table1 = abund_fungi,
+  table1name = "bac",
+  table2name = "fungi",
+  vscol1 = "Warm",
+  method        = "spearman",
+  r.threshold   = 0.8,
+  p.threshold   = 0.05
+)
+```
+
+
+
+## Function Overview
 
 # aggregation_netpipeline
 
@@ -53,9 +164,7 @@ aggregated_network = aggregation_netpipeline (
     output_dir = getwd())
 ~~~
 
-### Mainly use functions:
-
-
+### Key functions used
 
 ### process_group_and_table function：
 
