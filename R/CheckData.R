@@ -69,8 +69,9 @@ process_group_and_table <- function(table, group_df = NULL, vscol) {
   }
 
   # Return modified table, group_df, and group_list as a list
-  return(list(table = table, group_df = group_df, group_list = group_list))
   message("✅ Number of samples matched: ", length(unique(group_df$sample)))
   message("✅ Number of groups detected: ", length(group_list))
+  return(list(table = table, group_df = group_df, group_list = group_list))
+
 
 }
