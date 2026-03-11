@@ -30,7 +30,7 @@ Network analysis is a fundamental tool for elucidating microbial interactions, w
 install.packages("BiocManager")
 library(BiocManager)
 BiocManager::install("limma")
-install("remotes")
+install.packages("remotes")
 remotes::install_github("zdk123/SpiecEasi")
 remotes::install_github("TangZecheng622/MicroSSNet")
 ~~~
@@ -405,5 +405,6 @@ Visualization option (`True` or `False`)
 ### determineCharacteristics function：
 
 **Function**: Calculate the network properties of single-sample networks.
+
 
 
