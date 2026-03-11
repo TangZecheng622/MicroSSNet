@@ -21,8 +21,7 @@ make_one_edgelist_file_general <- function(
     col_n,
     p_values = FALSE,
     p_cutoff = 0.05,
-    col_p_n = 3,
-    n_genes
+    col_p_n = 3
 ) {
   # Load required package
   if (!requireNamespace("data.table", quietly = TRUE)) {
@@ -39,7 +38,14 @@ make_one_edgelist_file_general <- function(
   }
 
   # Initialize data frame for consolidated results
-  n_edges <- n_genes * (n_genes - 1) / 2  # Number of unique edges without self-loops
+  file_path <- paste0(dir, file_list[1])
+  sample <- sub("ssPCC_(.*)\\.tsv", "\\1", file_list[1])
+
+  # Load data and validate structure
+  table_sample <- data.table::fread(file_path, header = TRUE, data.table = FALSE)
+
+
+  n_edges <- nrow(table_sample)  # Number of unique edges without self-loops
   table_total <- data.frame(matrix(NA_real_, ncol = length(file_list) + 2, nrow = n_edges))
   col_names <- c("node1", "node2")
 

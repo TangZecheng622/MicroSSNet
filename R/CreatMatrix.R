@@ -60,6 +60,7 @@ corMicro <- function(table1,
 
 
     # 过滤相关性
+    occor.ori_r <- occor.r
     occor.r[abs(occor.r) < r.threshold | occor.p > p.threshold] <- 0
     diag(occor.r) <- 0
     occor.r[occor.r > 1] <- 1
@@ -67,7 +68,7 @@ corMicro <- function(table1,
     cor <- occor.r
 
     if (vose == TRUE) {
-      write.csv(occor.r, file = file.path(output_dir, paste0(sel_group, "_ori_cor_matrix.csv")))
+      write.csv(occor.ori_r, file = file.path(output_dir, paste0(sel_group, "_ori_cor_matrix.csv")))
       write.csv(occor.p, file = file.path(output_dir, paste0(sel_group, "_ori_pval_matrix.csv")))
       data.table::fwrite(cor, file = file.path(output_dir, paste0(sel_group, "_Cor_Matrix.csv")), sep = ",", quote = FALSE, row.names = TRUE)
       cor_list <- get_full_edge_list(cor)
@@ -79,12 +80,13 @@ corMicro <- function(table1,
     occor.r <- result[[1]]
     occor.p <- result[[2]]
 
+    occor.ori_r <- occor.r
     occor.r[abs(occor.r) < r.threshold | occor.p > p.threshold] <- 0
     diag(occor.r) <- 0
     cor <- occor.r
 
     if (vose == TRUE) {
-      write.csv(occor.r, file = file.path(output_dir, paste0(sel_group, "_sparcc_ori_cor_matrix.csv")))
+      write.csv(occor.ori_r, file = file.path(output_dir, paste0(sel_group, "_sparcc_ori_cor_matrix.csv")))
       write.csv(occor.p, file = file.path(output_dir, paste0(sel_group, "_sparcc_ori_pval_matrix.csv")))
       write.csv(cor, file = file.path(output_dir, paste0(sel_group, "_Sparcc_Cor_Matrix.csv")))
       cor_list <- get_full_edge_list(cor)

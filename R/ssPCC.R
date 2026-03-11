@@ -113,7 +113,7 @@ sspcc_cal <- function(sel_otu_table,base_correlation = NULL,
 #' @importFrom data.table fwrite
 #' @importFrom stats pnorm
 #' @export
-sspcc_cal2 <- function(sel_otu_table, group_df, ck = "CK", group = "group",r_emergent_threshold = 0.6) {
+sspcc_cal2 <- function(sel_otu_table, group_df, ck = "CK", group = "group",r_emergent_threshold = 0.6,r_bg_abs_min = 0.6) {
   # Load required package
   if (!requireNamespace("data.table", quietly = TRUE)) {
     stop("Package 'data.table' is required but not installed.")
@@ -194,7 +194,9 @@ sspcc_cal2 <- function(sel_otu_table, group_df, ck = "CK", group = "group",r_eme
     )
 
     colnames(res)[5] <- paste(sampleID,"PCC_value",  sep = "_")
+    res$r_bg[is.na(res$r_bg)] <- 0
 
+    res <- res[res$r_bg >= r_bg_abs_min,]
     # Save results
     file_name <- file.path(output_dir, paste0("ssPCC_", sampleID, ".tsv"))
     data.table::fwrite(res, file = file_name, sep = "\t")
