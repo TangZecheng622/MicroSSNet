@@ -1,5 +1,5 @@
 # MicroSSNet: An R package for microbial network construction and analysis at the single-sample and aggregated levels.
-Network analysis is a fundamental tool for elucidating microbial interactions, which are crucial for understanding the mechanisms that shape ecosystem structure and function. Traditional aggregated (co-abundance/co-occurrence) network approaches that infer pairwise relationships among biological entities from large sample collections often overlook sample-specific interaction patterns. To address this, we developed MicroSSNet, an R package designed for analyzing microbial networks at both the aggregated and single-sample levels. These results highlight the importance of sample-specific interaction patterns and demonstrate that SSN-based approaches provide complementary insights into aggregated network and abundance-based approaches. MicroSSNet offers a robust framework for constructing and analyzing single-sample microbial networks, advancing microbiome research at both the individual and community scales. The package is freely available on GitHub (https://github.com/TangZecheng622/MicroSSNet).
+Network analysis is a fundamental tool for elucidating microbial interactions, which are crucial for understanding the mechanisms that shape ecosystem structure and function. Traditional aggregated (co-abundance/co-occurrence) network approaches that infer pairwise relationships among biological entities from large sample collections often overlook sample-specific interaction patterns. To address this, we developed MicroSSNet, an R package designed for analyzing microbial networks at both the aggregated and single-sample levels. These results highlight the importance of sample-specific interaction patterns and demonstrate that SSN-based approaches provide complementary insights into aggregated network and abundance-based approaches. MicroSSNet offers a robust framework for constructing and analyzing single-sample microbial networks, advancing microbiome research at both the individual and community scales. The package is freely available on GitHub (https://github.com/TangZecheng622/MicroSSNet). Reproducibility information is provided in sessionInfo.txt.
 
 # Brief Overview
 <img width="729" height="1050" alt="image" src="https://github.com/user-attachments/assets/eb9f4c5f-c334-4999-9b6c-3ffd07a5516e" />
@@ -415,6 +415,7 @@ Visualization option (`True` or `False`)
 ### determineCharacteristics function：
 
 **Function**: Calculate the network properties of single-sample networks.
+
 
 
 
