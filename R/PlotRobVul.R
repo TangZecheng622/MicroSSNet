@@ -101,7 +101,8 @@ plot_robustness_detail <- function(rrob_detail, compare_groups = NULL) {
 
   p <- ggplot2::ggplot(rrob_detail, ggplot2::aes(x = Proportion.removed, y = Robustness, color = group, fill = group)) +
     ggplot2::geom_boxplot(width = 0.25, fill = "white", size = 0.1, outlier.shape = NA, position = ggplot2::position_dodge(width = 0.6)) +
-    ggdist::stat_halfeye(adjust = 0.33, width = 0.67, color = NA, position = ggplot2::position_dodge(width = 0.6)) +
+    # ggdist::stat_halfeye(adjust = 0.33, width = 0.67, color = NA, position = ggplot2::position_dodge(width = 0.6)) +
+
     ggplot2::theme_bw() +
     ggplot2::ylab("Robustness") +
     ggplot2::labs(title = "Robustness of Network under Random Node Removal") +
@@ -111,14 +112,14 @@ plot_robustness_detail <- function(rrob_detail, compare_groups = NULL) {
   # Add statistical comparisons if compare_groups is provided
   if (!is.null(compare_groups)) {
     p <- p + ggpubr::stat_compare_means(
-      # comparisons = compare_groups,
       ggplot2::aes(group = group),
+      # comparisons = compare_groups,
       label = "p.signif",
       method = "wilcox.test",
-      hide.ns = FALSE
+      hide.ns = FALSE,
+      show.legend = FALSE
     )
   }
-
   return(p)
 }
 #' Plot Vulnerability Detail
@@ -141,7 +142,7 @@ plot_vulnerability_detail <- function(rrob_detail, compare_groups = NULL) {
 
   p <- ggplot2::ggplot(rrob_detail, ggplot2::aes(x = Proportion.removed, y = Vulnerability, color = group, fill = group)) +
     ggplot2::geom_boxplot(width = 0.25, fill = "white", size = 0.1, outlier.shape = NA, position = ggplot2::position_dodge(width = 0.6)) +
-    ggdist::stat_halfeye(adjust = 0.33, width = 0.67, color = NA, position = ggplot2::position_dodge(width = 0.6)) +
+    # ggdist::stat_halfeye(adjust = 0.33, width = 0.67, color = NA, position = ggplot2::position_dodge(width = 0.6)) +
     ggplot2::theme_bw() +
     ggplot2::ylab("Vulnerability") +
     ggplot2::labs(title = "Vulnerability of Network under Random Node Removal") +
@@ -155,7 +156,8 @@ plot_vulnerability_detail <- function(rrob_detail, compare_groups = NULL) {
       ggplot2::aes(group = group),
       label = "p.signif",
       method = "wilcox.test",
-      hide.ns = FALSE
+      hide.ns = FALSE,
+      show.legend = FALSE
     )
   }
 
@@ -181,7 +183,7 @@ plot_complexity_detail <- function(rrob_detail, compare_groups = NULL) {
 
   p <- ggplot2::ggplot(rrob_detail, ggplot2::aes(x = Proportion.removed, y = Complexity, color = group, fill = group)) +
     ggplot2::geom_boxplot(width = 0.25, fill = "white", size = 0.1, outlier.shape = NA, position = ggplot2::position_dodge(width = 0.6)) +
-    ggdist::stat_halfeye(adjust = 0.33, width = 0.67, color = NA, position = ggplot2::position_dodge(width = 0.6)) +
+    # ggdist::stat_halfeye(adjust = 0.33, width = 0.67, color = NA, position = ggplot2::position_dodge(width = 0.6)) +
     ggplot2::theme_bw() +
     ggplot2::ylab("Complexity") +
     ggplot2::labs(title = "Complexity of Network under Random Node Removal") +
@@ -195,7 +197,8 @@ plot_complexity_detail <- function(rrob_detail, compare_groups = NULL) {
       ggplot2::aes(group = group),
       label = "p.signif",
       method = "wilcox.test",
-      hide.ns = FALSE
+      hide.ns = FALSE,
+      show.legend = FALSE
 
     )
   }

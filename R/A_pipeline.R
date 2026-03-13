@@ -68,6 +68,7 @@
 aggregation_netpipeline <- function(
     table1,
     tax = NULL,
+    tax_col = "Phylum",
     cor_table_list = NULL,
     group_df = NULL,
     vscol1 = "Group",
@@ -93,7 +94,7 @@ aggregation_netpipeline <- function(
   # Load required packages
 
   # Parameter validation
-  if (!is.data.frame(table1)) stop("Error: 'table1' must be a data frame.")
+  # if (!is.data.frame(table1)) stop("Error: 'table1' must be a data frame.")
   if (!is.null(tax) && !is.data.frame(tax)) stop("Error: 'tax' must be a data frame or NULL.")
   if (!is.null(cor_table_list) && !is.list(cor_table_list)) stop("Error: 'cor_table_list' must be a list or NULL.")
   if (!is.null(group_df) && !is.data.frame(group_df)) stop("Error: 'group_df' must be a data frame or NULL.")
@@ -117,6 +118,22 @@ aggregation_netpipeline <- function(
   if (!is.logical(calculate_cpx)) stop("Error: 'calculate_cpx' must be a logical value.")
   if (!is.character(output_dir)) stop("Error: 'output_dir' must be a character string.")
 
+  coerced <- coerce_to_table_and_group(
+    table1 = table1,
+    group_df = group_df,
+    phyloseq_tax_rank = NULL,
+    phyloseq_transform = "none"
+  )
+
+  table1 <- coerced$table1
+  group_df <- coerced$group_df
+
+  if (!is.data.frame(table1)) {
+    stop("Error: after coercion, 'table1' must be a data frame.")
+  }
+  if (!is.null(group_df) && !is.data.frame(group_df)) {
+    stop("Error: after coercion, 'group_df' must be a data frame or NULL.")
+  }
   # Create output directory if it doesn't exist
   create_output_dir(output_dir)
 
@@ -205,7 +222,7 @@ aggregation_netpipeline <- function(
     # Network visualization
     if (!is.null(tax)) {
       # If taxonomic information is provided, use plotnetwork_tax function (implementation needed)
-      message("Taxonomic information provided, but 'plotnetwork_tax' function is not implemented in this context.")
+      plotnetwork_by_tax(g = g, tax_df = tax, tax_col = tax_col, tag = sel_group, df = sel_species_df, output_dir = group_output_dir )
     } else {
       plotnetwork(g = g, clu_method = clu_method, tag = sel_group, df = sel_species_df, node_cluster = node.cluster, output_dir = group_output_dir)
     }
