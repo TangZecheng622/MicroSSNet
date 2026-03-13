@@ -31,6 +31,7 @@ install.packages("BiocManager")
 library(BiocManager)
 BiocManager::install("limma")
 install.packages("remotes")
+library("remotes")
 remotes::install_github("zdk123/SpiecEasi")
 remotes::install_github("TangZecheng622/MicroSSNet")
 ~~~
@@ -45,11 +46,13 @@ MicroSSNet provides example input files under the `examples/` directory.
 library(MicroSSNet)
 
 abund <- read.csv("examples/example_input_abundance.csv", row.names = 1)
-meta  <- read.csv("examples/example_metadata.csv", row.names = 1)
+meta  <- read.csv("examples/example_metadata.csv")
+tax <- read.csv("example_tax_input_data.csv",row.names = 1)
 
 (optional: phyloseq)
 otu <- otu_table(as.matrix(abund), taxa_are_rows = TRUE)
 sam <- sample_data(meta)
+rownames(sam) <- sam$sample
 phyloseq_test <- phyloseq(otu, sam)
 ```
 
@@ -92,7 +95,7 @@ Saved as e.g. `example_metadata.csv`.
 ssn_test <- ssn_pipeline(
   table1 = abund, #optional: phyloseq_test
   group_df = meta, #optional: # If `table1` is a phyloseq object that already contains sample metadata, `group_df` can be NULL.
-  ssn_method = "ssPCC",
+  ssn_method = "ssPCC", #optional:LIONESS-S,LIONESS-D
   vscol1 = "year", 
   # metadata column used for grouping (e.g., 2009, 2013, 2014)
   control = "2009", 
@@ -107,9 +110,11 @@ ssn_test <- ssn_pipeline(
 ### 3.**Construct an aggregated network**
 
 ```R
-agg_net——test <- aggregation_netpipeline(
+agg_net_test <- aggregation_netpipeline(
   table1 = abund,
   group_df = meta,
+  # tax = tax,
+  # tax_col = "Phylum",
   vscol1 = "Warm",
   method        = "spearman",
   r.threshold   = 0.6,
@@ -117,18 +122,19 @@ agg_net——test <- aggregation_netpipeline(
 )
 ```
 
-### 4.**Construct an bipartite(cross-domain) network**
+### 4.**Construct an bipartite network**
 
 ```
-agg_net <- aggregation_netpipeline(
+b_net <- bipartite_netpipeline(
   table1 = abund,
-  table1 = abund_fungi,
+  table2 = abund_fungi,
   table1name = "bac",
   table2name = "fungi",
+  group_df = meta,
   vscol1 = "Warm",
   method        = "spearman",
-  r.threshold   = 0.8,
-  p.threshold   = 0.05
+  r.threshold   = 0.5,
+  p.threshold   = 0.5
 )
 ```
 
@@ -142,6 +148,7 @@ agg_net <- aggregation_netpipeline(
 aggregated_network = aggregation_netpipeline (
     table1,
     tax = NULL,
+    tax_col = "Phylum",
     cor_table_list = NULL,
     group_df = NULL,
     vscol1 = "Group",
@@ -162,7 +169,7 @@ aggregated_network = aggregation_netpipeline (
     calculate_vul = TRUE,
     calculate_rob = TRUE,
     calculate_cpx = TRUE,
-    output_dir = getwd())
+    output_dir = getwd()
 ~~~
 
 ### Key functions used
@@ -248,7 +255,7 @@ single_sample_network = bipartite_netpipeline (
     calculate_vul = TRUE,
     calculate_rob = TRUE,
     calculate_cpx = TRUE,
-    output_dir = getwd())
+    output_dir = getwd()
 ~~~
 
 ### Mainly use functions:
@@ -310,10 +317,11 @@ tab_s_pip =ssn_pipeline (
     vscol1,
     vscol2 = vscol1,
     ssn_method = "ssPCC",
-    control = "pergroup",
+    control = "all",
     log = TRUE,
     top = NULL,
     pvl_threshold = 0.5,
+    r_bg_abs_min = 0.6,
     r_threshold = 0,
     scale = TRUE,
     save = TRUE,
@@ -323,7 +331,9 @@ tab_s_pip =ssn_pipeline (
     binary = FALSE,
     showType = NULL,
     limma = TRUE,
-    property = TRUE
+    property = TRUE,
+    phyloseq_tax_rank = NULL,
+    phyloseq_transform = c("none", "relative")
 ) 
 ~~~
 
@@ -405,6 +415,7 @@ Visualization option (`True` or `False`)
 ### determineCharacteristics function：
 
 **Function**: Calculate the network properties of single-sample networks.
+
 
 
 
