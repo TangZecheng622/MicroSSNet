@@ -13,8 +13,6 @@
 install.packages("BiocManager")
 BiocManager::install("limma")
 install.packages("remotes")
-
-remotes::install_github("zdk123/SpiecEasi")
 remotes::install_github("TangZecheng622/MicroSSNet")
 
 library(MicroSSNet)
@@ -61,7 +59,14 @@ ssn_test <- ssn_pipeline(
   control = "2009",
   vscol2 = "Warm"
 )
-
+# ```Outputs:
+# An SSN/ directory will be created in the current working directory. This directory contains:
+# single-sample network weight tables for each sample;
+# a summarized table of SSN-derived sample features;
+# PCA results based on SSN edge and node weights, if pca = TRUE;
+# PCoA results based on SSN edge and node weights, if pcoa = TRUE;
+# differential SSN edge and node analysis results, if limma = TRUE.
+# ```
 # -------------------------
 # 4. Aggregated network analysis
 # Supports two input modes:
@@ -101,7 +106,17 @@ agg_net_test <- aggregation_netpipeline(
   step = 50,
   output_dir = "./example_output/aggregated_network_table"
 )
-
+# ```Outputs:
+# Separate directories for each group will be created in the current working directory. Each directory contains:
+# the network adjacency matrix for the corresponding group;
+# network visualization plots;
+# network topological properties;
+# degree distribution statistics;
+# Zi–Pi analysis results, if zipi = TRUE;
+# simulated vulnerability analysis results, if calculate_vul = TRUE;
+# simulated complexity analysis results, if calculate_cpx = TRUE;
+# simulated robustness analysis results, if calculate_rob = TRUE.
+# ```
 # -------------------------
 # 5. Bipartite network analysis
 # -------------------------
@@ -117,3 +132,14 @@ b_net <- bipartite_netpipeline(
   p.threshold = 0.5,
   output_dir = "./example_output/bipartite_network"
 )
+# `Outputs:
+# Separate directories for each group will be created in the current working directory. Each directory contains:
+# the bipartite network adjacency matrix for the corresponding group;
+# network visualization plots;
+# network topological properties;
+# degree distribution statistics;
+# Zi–Pi analysis results, if zipi = TRUE;
+# simulated vulnerability analysis results, if calculate_vul = TRUE;
+# simulated complexity analysis results, if calculate_cpx = TRUE;
+# simulated robustness analysis results, if calculate_rob = TRUE.
+# ```
