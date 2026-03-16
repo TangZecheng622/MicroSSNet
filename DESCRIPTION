@@ -23,13 +23,14 @@ Imports:
     networktools,
     qgraph,
     scales,
-    SpiecEasi,
     tidyr,
     vegan,
     magrittr,
     methods,
     purrr,
     rlang,
-    tibble
+    tibble,
+    future.apply
 Suggests: 
+    SpiecEasi,
     lionessR
