@@ -23,16 +23,15 @@ Network analysis is a fundamental tool for elucidating microbial interactions, w
 # Dependencies:
 # Imports:
 #   data.table, dplyr, ggdist, ggplot2, ggpubr, ggsci, Hmisc, igraph, limma, mgm,
-#   networktools, qgraph, scales, SpiecEasi, tidyr, vegan, magrittr, methods,
-#   purrr, rlang, tibble
+#   networktools, qgraph, scales, tidyr, vegan, magrittr, methods,
+#   purrr, rlang, tibble, future.apply
 # Suggests:
-#   lionessR
+#   SpiecEasi, lionessR
 install.packages("BiocManager")
 library(BiocManager)
 BiocManager::install("limma")
 install.packages("remotes")
 library("remotes")
-remotes::install_github("zdk123/SpiecEasi")
 remotes::install_github("TangZecheng622/MicroSSNet")
 ~~~
 
@@ -107,6 +106,14 @@ ssn_test <- ssn_pipeline(
 )
 ```
 
+```Outputs:
+An SSN/ directory will be created in the current working directory. This directory contains:
+single-sample network weight tables for each sample;
+a summarized table of SSN-derived sample features;
+PCA results based on SSN edge and node weights, if pca = TRUE;
+PCoA results based on SSN edge and node weights, if pcoa = TRUE;
+differential SSN edge and node analysis results, if limma = TRUE.
+```
 ### 3.**Construct an aggregated network**
 
 ```R
@@ -120,6 +127,18 @@ agg_net_test <- aggregation_netpipeline(
   r.threshold   = 0.6,
   p.threshold   = 0.05
 )
+```
+
+```Outputs:
+Separate directories for each group will be created in the current working directory. Each directory contains:
+the network adjacency matrix for the corresponding group;
+network visualization plots;
+network topological properties;
+degree distribution statistics;
+Zi–Pi analysis results, if zipi = TRUE;
+simulated vulnerability analysis results, if calculate_vul = TRUE;
+simulated complexity analysis results, if calculate_cpx = TRUE;
+simulated robustness analysis results, if calculate_rob = TRUE.
 ```
 
 ### 4.**Construct an bipartite network**
@@ -138,6 +157,17 @@ b_net <- bipartite_netpipeline(
 )
 ```
 
+```Outputs:
+Separate directories for each group will be created in the current working directory. Each directory contains:
+the bipartite network adjacency matrix for the corresponding group;
+network visualization plots;
+network topological properties;
+degree distribution statistics;
+Zi–Pi analysis results, if zipi = TRUE;
+simulated vulnerability analysis results, if calculate_vul = TRUE;
+simulated complexity analysis results, if calculate_cpx = TRUE;
+simulated robustness analysis results, if calculate_rob = TRUE.
+```
 
 
 ## Function Overview
