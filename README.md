@@ -106,7 +106,8 @@ ssn_test <- ssn_pipeline(
 )
 ```
 
-```Outputs:
+```
+Outputs:
 An SSN/ directory will be created in the current working directory. This directory contains:
 single-sample network weight tables for each sample;
 a summarized table of SSN-derived sample features;
@@ -129,7 +130,8 @@ agg_net_test <- aggregation_netpipeline(
 )
 ```
 
-```Outputs:
+```
+Outputs:
 Separate directories for each group will be created in the current working directory. Each directory contains:
 the network adjacency matrix for the corresponding group;
 network visualization plots;
@@ -157,7 +159,8 @@ b_net <- bipartite_netpipeline(
 )
 ```
 
-```Outputs:
+```
+Outputs:
 Separate directories for each group will be created in the current working directory. Each directory contains:
 the bipartite network adjacency matrix for the corresponding group;
 network visualization plots;
