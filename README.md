@@ -19,7 +19,7 @@ Network analysis is a fundamental tool for elucidating microbial interactions, w
 
 ~~~
 # Requirements:
-# - R (> 4.5.0 recommended)
+# - R (> 4.4.0 recommended)
 # Dependencies:
 # Imports:
 #   data.table, dplyr, ggdist, ggplot2, ggpubr, ggsci, Hmisc, igraph, limma, mgm,
